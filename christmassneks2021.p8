@@ -85,25 +85,24 @@ function slither()
 		gridx=flr((snek[i].x+3)/6)
 		gridy=flr((snek[i].y+3)/6)
 		
-			social_distance(i,10)
+			social_distance(i,8)
 	end
 	for i=#snek-1,1,-1 do
 		snek[i].wire={x0=snek[i].x+4,y0=snek[i].y+4,x1=snek[i+1].x+3,y1=snek[i+1].y+3}
 	end
-	if (not express) then
-		for i=#snek-1,1,-1 do
-			if(tongue.x>=snek[i].x) then
-				if (tongue.x<snek[i].x+8) then
-					if (tongue.y>=snek[i].y) then	
-						if(tongue.y<snek[i].y+8) then
-							short=i
-							break
-						end	
-					end
-				end		
-			end
+	for i=#snek-1,1,-1 do
+		if(tongue.x>=snek[i].x) then
+			if (tongue.x<snek[i].x+6) then
+				if (tongue.y>=snek[i].y) then	
+					if(tongue.y<snek[i].y+6) then
+						short=i
+						break
+					end	
+				end
+			end		
 		end
-	end	
+	end
+		
 end	
 function social_distance(i,distance)
 	dx=snek[i+1].x - snek[i].x
@@ -144,7 +143,7 @@ function short_circuit()
 	local head=snek[#snek]
 	if (#snek>=short) then
 		add(burnouts,deli(snek,short))
-		burnouts[#burnouts].wait=.01+rnd(2)*.01
+		burnouts[#burnouts].wait=.1+rnd(5)*.01
 		burnouts[#burnouts].time=time()
 	end
 	if (#snek<short) then
@@ -156,7 +155,6 @@ function short_circuit()
 			for bulb in all(snek) do
 				bulb.train=false
 			end
-			boarding=false
 			new_head.wire={x0=new_head.x+4, y0=new_head.y+4,x0=new_head.x+4, y0=new_head.y+4}
 			update_tongue(new_head)
 
@@ -166,14 +164,14 @@ end
 function update_burnout()
 	if (#burnouts>0)then
 		burnout=burnouts[1]
-		if (burnout.s%5==3) then
-			sfx(48)
-		end	
+	--	if (burnout.s%5==3) then
+	--		sfx(48)
+	--	end	
 		if (time()-burnout.time>burnout.wait) then
-			burnout.s+=1
-			burnout.time=time()
-		end	
-		if (burnout.s%5==4)then
+	--		burnout.s+=1
+		--	burnout.time=time()
+		--else	
+		--if (burnout.s%5==4)then
 			deli(burnouts,1)
 		end	
 		if (#burnouts==0 and #snek==0) then
@@ -209,7 +207,7 @@ function update_growth(head)
 	--if (fget(mget(gridx,gridy))==1) then  //if snek yard
 		for i, bulb in pairs(bulbs) do
 			if (bulb.x==gridx and bulb.y == gridy) then
-				bulb.s=flr(bulb.s/5)*5
+				bulb.s=bulb.s-16 --row above
 				bulb.aim=head.aim
 				bulb.x*=6
 				bulb.y*=6
@@ -264,7 +262,7 @@ function draw_snek()
 	
 	for i=1,#snek-1 do
 		local wire=snek[i].wire
-		line(wire.x0,wire.y0,wire.x1,wire.y1,dark_purple)
+		line(wire.x0,wire.y0,wire.x1,wire.y1,dark_gray)
 	end
 	for i=1,#snek do
 		spr(snek[i].s,snek[i].x,snek[i].y)	
@@ -276,13 +274,13 @@ function draw_snek()
 		pset(tongue.x3, tongue.y3,tongue.c3)
 	end	
 	for burnout in all(burnouts) do
-		spr(burnout.s,burnout.x,burnout.y)
+		spr(burnout.s+32,burnout.x,burnout.y)
 	end
 end	
 function draw_bulbs()
 	
 
-	for i=1,#snek do
+	for i=1,#bulbs do
 		spr(bulbs[i].s,bulbs[i].x*6,bulbs[i].y*6)	
 	end
 	
@@ -305,7 +303,7 @@ function update_snek_yard()
 		gaze_wait=2
 		for bulb in all(snek) do
 			bulb.train=false
-			add(lights,{x=bulb.x,y=bulb.y,c=flr(bulb.s/5)+1})
+			add(lights,{x=bulb.x,y=bulb.y,c=flr(bulb.s-16)+1})  -- minus 16 row above
 		end
 		music(39)
 	end	
@@ -313,7 +311,7 @@ function update_snek_yard()
 	if (#bulbs <4) then
 		local bulb=get_empty_cell()
 		if (bulb) then
-			bulb.s=flr(rnd(4))*5 +4
+			bulb.s=flr(rnd(4))+43
 			--mset(bulb.x,bulb.y,bulb.s)
 			add(bulbs,bulb)
 		end
