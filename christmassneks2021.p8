@@ -41,15 +41,36 @@ outlet1 =
 {
 	detect = function(x,y)
 		if (y>81 and y<87 and x<6 and x >2) then 
-			sfx(0)
-			if (dark) then 
-				dark=false
-				speed =1
+			if not plugged_in then
+				sfx(0)
+				if (dark) then 
+					dark=false
+				end
+				if y>84 then
+					snek[#snek].x=2 
+					snek[#snek].y=83	
+				else
+					snek[#snek].x=2 
+					snek[#snek].y=81		
+				end	
 				reverse_snek()
+				social_distance()
+				speed =1
 				plugged_in=true
 				return	true
-					
-			end	
+			else --short circuit	
+				if y>84 then
+					snek[#snek].x=4 
+					snek[#snek].y=85	
+				else
+					snek[#snek].x=4 
+					snek[#snek].y=83		
+				end	
+				social_distance()
+				speed =1
+				reverse_snek()
+				short =1
+			end		
 		else
 			return false
 		end
@@ -86,8 +107,6 @@ function reverse_snek()
 	update_tongue(snek[#snek])
 end
 function _init()
-	--pal({[0]=0,1,140,3,4,5,6,7,8,9,10,11,12,13,14,15},1)
-	--light_palette={[0]=black,dark_blue,mid_blue,dark_green,brown,charcoal,gray,white,red,orange,yellow,green,blue,lavendar,pink,peach}
 	pal({[0]=0,1,140,3,4,5,6,7,8,9,10,11,12,13,14,15},1)
 	light_palette={[0]=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}
 --		black,dark_blue,mid_blue,dark_green,brown,charcoal,gray,white,red,orange,yellow,green,blue,lavendar,pink,peach
@@ -139,7 +158,7 @@ function slither()
 	local dy, dx, c, gridx, gridy,aim
 	if plugged_in then
 		
-		reverse_social_distance()
+		pinned_social_distance()
 				
 	else
 			
@@ -183,8 +202,8 @@ function slither()
 	detect_collision(tongue.x,tongue.y)
 		
 end	
-function social_distance(last)
-	for i=#snek-last,1,-1 do 
+function social_distance()
+	for i=#snek-1,1,-1 do 
 		dx=snek[i+1].x - snek[i].x
 		dy=snek[i+1].y - snek[i].y
 		c=dx*dx+dy*dy
@@ -195,18 +214,28 @@ function social_distance(last)
 		end
 	end		
 end
-function reverse_social_distance(i) 
-
-	for i=#snek-1,1,-1 do  	
+function pinned_social_distance() 
+	for i=#snek-1,2,-1 do -- social distance starting at head and stop before tail
 		dx=snek[i+1].x - snek[i].x
 		dy=snek[i+1].y - snek[i].y
 		c=dx*dx+dy*dy
 		if (c>49) then --distance =7 square distance 49
 			c=sqrt(c)
-			snek[i+1].x=snek[i].x+dx/c*7
-			snek[i+1].y=snek[i].y+dy/c*7
-		end	
-	end
+			snek[i].x=snek[i+1].x-dx/c*7
+			snek[i].y=snek[i+1].y-dy/c*7
+		end
+	end	
+	for i=1,#snek-1 do --social distance starting at tail to pull back if needed
+		dx=snek[i].x - snek[i+1].x
+		dy=snek[i].y - snek[i+1].y
+		c=dx*dx+dy*dy
+		if (c>49) then --distance =7 square distance 49
+			c=sqrt(c)
+			snek[i+1].x=snek[i].x-dx/c*7
+			snek[i+1].y=snek[i].y-dy/c*7
+		end
+	end	
+
 end
 
 function travel(head)
@@ -220,7 +249,7 @@ function travel(head)
 		elseif (btnp(down)) then
 			head.aim=down
 		elseif (btnp(fire1) or btnp(fire2)) then
-			--plugged_in=false	
+			plugged_in=false	
 		end	
 		if (pause == 0) then
 			if (head.aim==left) then
@@ -433,12 +462,19 @@ function draw_snek_yard()
 	cls()
 	if dark then
 		pal(darkPalette,0)
+		
 	else 
 		pal(lightPalette,0)
+		
 	end	
-	map(16,0)
-		map(0,0)
 
+	map(16,0)
+	pal(gray,light_green)
+	pal(mid_blue,dark_green)
+	
+	map(0,0)
+	pal(light_green, light_green)
+	pal(dark_green, dark_green)
 	map(32,0)
 	pal(light_palette,0)
 	if (gameover) then
