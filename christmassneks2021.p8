@@ -19,8 +19,9 @@ flames={}
 star =
 {
 	detect = function(x,y)
-		if x>36 and x < 40 and y >21  and y <25 then
-			sfx(0)
+		if plugged_in and x>36 and x < 40 and y >21  and y <25 then
+			winner=true
+			music(0)
 		end
 	end
 }
@@ -30,11 +31,11 @@ doll =
 		if (y<45 or y> 63) return false
 		if (x<7 or x>18) return false
 		if (y>44 and y<51 and x>9 and x <17) then --head
-			sfx(0)
+		
 			return true
 		end
 		if (y>44 and y<51 and x>9 and x <17) then --head
-			sfx(0)
+		
 			return true
 		end
 	end
@@ -63,7 +64,7 @@ outlet =
 				reverse_snek()
 				
 				if not plugged_in then
-					sfx(0)
+					
 					if (dark) then 
 						dark=false
 					end
@@ -105,9 +106,6 @@ log={
 				fset(105, 128 )
 				fset(106, 128 )
 				mset(11,10,63)
-				conflagration=true
-				mset(53,10,26)
-
 			end
 		else
 			return false
@@ -123,6 +121,13 @@ function setTimer(p)
 end
 
 function detect_collision(x,y)
+	local gridx,gridy= x\8+48,y\8
+	if plugged_in and fget(mget(gridx,gridy),0) then
+		conflagration=true
+		mset(gridx,gridy,26)
+		return
+	end
+
 	if ( y <45) then 
 		star.detect(x,y)
 		return
@@ -179,7 +184,6 @@ function init_bulbs()
 		local bulb=get_empty_cell()
 		if (bulb) then
 			bulb.s=flr(rnd(4))+43
-			--mset(bulb.x,bulb.y,bulb.s)
 			add(bulbs,bulb)
 		end	
 	end
@@ -341,8 +345,7 @@ function update_burnout()
 		end	
 		if (#burnouts==0 and #snek==0) then
 			gameover_time=time()
-			
-			--fuses_blown=true
+			fuses_blown=true
 		end	
 	elseif(#snek==0) then	
 		local timing=time()-gameover_time
@@ -500,24 +503,30 @@ function update_snek_yard()
 	end		
 end
 
-ignition={{x=-1,y=0},{x=1,y=0},{x=0,y=-1},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0}} ---left, right, top
+ignition={{x=-1,y=0},{x=1,y=0},{x=0,y=-1},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},false} ---left, right, top
 flame_set={25,26,41,42}
 function flame_generator()
 	local ignite, tree,flame,tree_x, tree_y,i,j,kindling
 	while true do
 		
 		for i=48,57 do
-			for j=3,13 do
+			for j=3,14 do
 				flame=fget(mget(i,j),1)
 				if flame then
-					mset(i,j,rnd(flame_set))
 					ignite=rnd(ignition)
-					tree_x=i+ignite.x
-					tree_y=j+ignite.y
-					tree=fget(mget(tree_x, tree_y),0)
-					if (tree) then
-						mset(tree_x,tree_y,rnd(flame_set))
-					end			
+					if (not ignite) then
+						mset(i,j,0) --remove flames
+						mset(i+16,j,mget(i-48,j)) --add ash tree						
+						mset(i-48,j,0) --remove burnt tree
+					else
+						mset(i,j,rnd(flame_set))
+						tree_x=i+ignite.x
+						tree_y=j+ignite.y
+						tree=fget(mget(tree_x, tree_y),0)
+						if (tree) then
+							mset(tree_x,tree_y,rnd(flame_set))
+						end			
+					end	
 				end
 			end	
 		end
@@ -556,11 +565,18 @@ function draw_snek_yard()
 				pal(dark_blue,dark_green)
 				pal(blue,green)
 				map(0,0)
-				pal(light_palette)
+				
 				if (fuses_blown) pal(gray,black)
-				map(32,0)
+				map(32,0)  --toys
 				if conflagration then
-					map(48,0,0,0,11,11,2)
+					map(48,0,0,0,14,14,2) --fire 
+					pal(dark_blue,charcoal)
+					pal(blue,charcoal)
+					palt(dark_green,true)
+					palt(green,true)
+					map(64,0) --ashes
+					palt()
+					pal(light_palette)
 				end	
 				
 			end	
