@@ -11,15 +11,15 @@ buttons={}
 buttons[1]=left; buttons[2]=right; buttons[4]=up; buttons[8]=down
 bulb_colors={green,red,blue,yellow}
 bulb_blink={dark_green,pink,dark_blue,brown}
-sparks={black,black,black,yellow}
-flames={white,yellow,orange,red,charcoal}
+sparks={yellow,black,black,orange}
+--flames={white,yellow,orange,red,charcoal}
 flash_pattern={0,1,4}
-crackle_pattern={0,39}
+--crackle_pattern={0,39}
 yule_set={31, 47,63}
-flames={}
+--flames={}
 xray={}
-bear_skeleton={s=66,x=102,y=86,w=2,h=2,x0=101,x1=121,y0=85,y1=103}
-shirt={s=66,x=104,y=86,w=2,h=2}
+bear_skeleton={s=66,x=103,y=86,w=2,h=2,x0=104,x1=118,y0=85,y1=102}
+shirt={s=218,x=40,y=88,w=2,h=3,x0=39,x1=54,y0=87,y1=110}
 diamond={s=160,x=50,y=105,w=2,h=1,x0=49,x1=65,y0=103,y1=114}
 heart={s=114,x=10,y=50,w=1,h=1,x0=7,x1=20,y0=44,y1=64}
 achievements=
@@ -33,17 +33,23 @@ achievements=
 	mood_lighting={text="x-ray vision",quantity=0, max=3},
 	longest_string={text="longest string of bulbs",quantity=0},
 	robot_dance={text="robot dance",quantity=0,max=1}
+	--              S
 	--            time
 	--           big ben
 	--         robot dance   
 	--        Mood lighting
-	--       deck the halls
+	--       yule log tender
+	--     WWWWWWWWWWWWWWWWWWWWW
+	--       deck the halls K (ho, ho, ho!)
+	--    WWWGWWWWWPWWWwWWwWWWWWW
 	--      xray ^^^^ vision 
 	--    Exploded 10 bulbs
 	--        Strung 100 bulbs
+	--    High voltage
+	--              Low voltage
 	--    Electric candle light
-	--  Electro-shock Therapy
-	--     Smoke alarm sing along
+	--  Electro-shock Therapy (oh, no!)
+	--     Smoke alarm sing along (uh, oh!)
 	--  
 
 }
@@ -67,69 +73,99 @@ detect_star = function(x,y)
 end
 
 detect_bear=function(x,y)
-	if (y>85 and y< 95 and x>104 and x<115 and plugged_in) then
-		if (#xray == 0) xray[1]=bear_skeleton
-		sfx(46)
+	if (y>85 and y< 100 and x>104 and x<118 and plugged_in) then
+		xray[1]=bear_skeleton
+		if (stat(46)!=46) sfx(46,0)
 		return true
-	elseif (xray[1]==bear_skeleton)	then
-		xray={}
-		sfx(-1)
+	else
+		if (xray[1]==bear_skeleton)	then
+			xray={}
+			sfx(-1,0)
+		end
+		return false
 	end	
-	return false
+end
+detect_doll=function(x,y)
+	if (x>6 and x<19 and y>44 and y< 64 and  plugged_in) then
+		
+			--sfx(-1,0)
+			xray[1]=heart
+			if (stat(46)!=46) sfx(46,0)
+		return true
+	else
+		if (xray[1]==heart)	then
+			xray={}
+			sfx(-1,0)
+		end
+		return false
+	end	
 end
 
-detect_doll=function(x,y)
-		if (y<45 or y> 63 or x<7 or x>18) then
-			if (xray[1]==heart)	xray={}
-			sfx(-1)
-			return false
-		else
-			if (#xray == 0 and plugged_in) then 
-				xray[1]=heart
-				sfx(46)
+detect_diamond=function(x,y)
+	if (y>102 and y< 120 and x>48 and x<65 and plugged_in) then
+			xray[1]=diamond
+			if (stat(46)!=46) sfx(46,0)
+		return true
+	else
+		if (xray[1]==diamond) then
+			xray={}
+			sfx(-1,0)
+		end
+		return false
+	end	
+end
+--shirt={s=66,x=104,y=86,w=2,h=2}
+detect_shirt=function(x,y)
+	if (y>87 and  y< 104 and x>39 and x<55 and plugged_in) then
+		xray[1]=shirt
+		if (stat(46)!=46) sfx(46,0)
+		return true
+	else
+		if (xray[1]==shirt) then
+			xray={}
+			sfx(-1,0)
+		end
+		return false
+	end	
+end
+detect_outlet = function(x,y)
+	if (y>81 and y<87 ) then 
+		local new_x=0
+		if (x<6 and x >2) then 
+			new_x=2 
+			speed=1.2
+			
+		elseif(x >121 and x<125  ) then
+			new_x=121
+			speed=2.2
+			
+		end	
+		if new_x>0 then 
+			snek[#snek].x=new_x 
+			if y>84 then
+				snek[#snek].y=83	
+			else
+				snek[#snek].y=81		
+			end	
+			social_distance()
+			reverse_snek()
+			if not plugged_in then
+				
+				--if (dark) then 
+				--	dark=false
+				--end
+				plugged_in=true
+			else --short circuit	
+				short =1
 			end
 			return true
-		end
-	end
-detect_outlet = function(x,y)
-		
-		if (y>81 and y<87 ) then 
-			local new_x=0
-			if (x<6 and x >2) then 
-				new_x=2 
-				speed=1
-				
-			elseif(x >121 and x<125  ) then
-				new_x=121
-				speed=2
-				
-			end	
-			if new_x>0 then 
-				snek[#snek].x=new_x 
-				if y>84 then
-					snek[#snek].y=83	
-				else
-					snek[#snek].y=81		
-				end	
-				social_distance()
-				reverse_snek()
-				if not plugged_in then
-					
-					if (dark) then 
-						dark=false
-					end
-					plugged_in=true
-				else --short circuit	
-					short =1
-				end
-				return true
-			else
-				return false	
-			end			
 		else
-			return false
-		end
+			return false	
+		end			
+	else
+		return false
 	end
+end
 
 detect_candles = function(x,y)
 	if plugged_in then
@@ -165,71 +201,43 @@ detect_log=function(x,y)
 end	
 detect_clock= function(x,y)
 	if plugged_in and x\8==11 and y\8==6 and stat(54)==0 then
+		
 		music(13)
 		return true
 	end	
 	return false
 end	
-detect_diamond=function(x,y)
-	if (y<103 or y> 119 or x<49 or x>64) then
-			if (xray[1]==diamond) then
-				xray={}
-				sfx(-1)
-			end	
-			return false
-	else
-		if (#xray == 0 and plugged_in) then
-			xray[1]=diamond
-			sfx(46)
-		end	
-		return true
-	end
-
-end
-detect_shirt=function(x,y)
-end
-pause=0
-timer=time()
-
-function setTimer(p)
-	pause=p
-	timer=time()
-end
 
 function detect_collision(x,y)
-	local gridx,gridy= x\8+48,y\8
-	if plugged_in and fget(mget(gridx,gridy),0) then
-		conflagration=true
-		mset(gridx,gridy,26)
-		return
-	end
-
-	if ( y <45) then 
-		detect_star(x,y)
-		return
-	end 
-
-	if (x > 64) then  --southeast (fireplace)
-		if ( not detect_log(x,y)) then
-			 if (not detect_outlet(x,y)) then 
-				if (not detect_candles(x,y)) then 
-					if (not detect_clock(x,y)) then
-						detect_bear(x,y)
-					end	
-				end
-			end
-		end			
-		return
-	else	-- southwest 
-		if (not detect_outlet(x,y)) then 
-			if not (detect_doll(x,y)) then
-				detect_diamond(x,y)
-			end
-		--detect_robotr
+	if plugged_in then	
+		if (not detect_star(x,y)) then	
+			if ( not detect_log(x,y)) then
+				if (not detect_outlet(x,y)) then 
+				   if (not detect_candles(x,y)) then 
+					   if (not detect_clock(x,y)) then
+						   if (not detect_bear(x,y)) then
+								if not (detect_doll(x,y)) then
+									if not (detect_diamond(x,y)) then
+										if not(detect_shirt(x,y)) then
+										
+											--detect_robot
+											local gridx,gridy= x\8+48,y\8
+											if fget(mget(gridx,gridy),0) then
+												conflagration=true
+												mset(gridx,gridy,26)
+											end	
+										end	
+									end
+								end
+						   end
+					   end	
+				   end
+			   end
+		   end	
 		end
-		return
-	end		
-
+	else
+		detect_outlet(x,y)	
+	end
 end
 
 function reverse_snek()
@@ -250,7 +258,7 @@ function _init()
 		black,dark_blue,black,charcoal,dark_blue,black,charcoal,black,black,black,black,black,black,black,black,black}
 	frame=0
 
-	dark=true
+	--dark=true
 	plugged_in=false
 	fire_lit=false
 	left_candle_lit=false
@@ -306,14 +314,14 @@ function slither()
 				
 	else
 			
-			social_distance(1)
+		social_distance(1)
 		
 	end	
 	
 	for i=#snek-1,1,-1 do
 		snek[i].wire={x0=snek[i].x+3,y0=snek[i].y+3,x1=snek[i+1].x+2,y1=snek[i+1].y+2}
 	end
-	if (not dark) then
+	if (plugged_in) then
 		for i=#snek-1,1,-1 do
 			if(tongue.x>=snek[i].x) then
 				if (tongue.x<snek[i].x+6) then
@@ -379,10 +387,9 @@ function travel(head)
 				head.aim=down
 			elseif (btnp(fire1) or btnp(fire2)) then
 				plugged_in=false
-				dark =true	
+				--dark =true	
 			end	
 		end	
-		--if (pause == 0) then
 			if (head.aim==left) then
 				head.x-=speed
 			elseif (head.aim==right) then
@@ -395,9 +402,7 @@ function travel(head)
 			update_tongue(head)
 			update_growth(head)
 			slither()
-		--elseif (time()>timer+pause)	then
-		--	pause=0
-		--end	
+
 	end
 end
 
@@ -414,9 +419,10 @@ function short_circuit()
 			local new_head=snek[#snek]
 			new_head.aim=head.aim
 			
-			speed=1
-
+			speed=1.2
+			
 			new_head.wire={x0=new_head.x+4, y0=new_head.y+4,x0=new_head.x+4, y0=new_head.y+4}
+			if (plugged_in and #snek ==1) plugged_in=false
 			update_tongue(new_head)
 
 		end	
@@ -443,19 +449,19 @@ function update_burnout()
 		local timing=time()-gameover_time
 		if (timing >.4 and timing <.5) then
 			mset(41,13,79)
-			sfx(38)
+			sfx(38,1)
 		elseif (timing >.5 and timing <.6) then
 			mset(42,7,79)
-			sfx(38)
+			sfx(38,1)
 		elseif (timing >.6 and timing <.7) then
 			mset(36,3,79)
-			sfx(38)		
+			sfx(38,1)		
 		elseif(timing>1 and timing<5)then
 			for i=0,5 do
 				local gridx=flr(rnd(16))
 				local gridy=flr(rnd(16))
 				mset(gridx+32,gridy,79)
-				sfx(38)
+				sfx(38,1)
 			end
 		elseif (timing>5) then
 			gameover=true
@@ -477,7 +483,7 @@ function update_growth(head)
 				bulb.y*=6
 				bulb.wire={x0=bulb.x,y0=bulb.y,x1=bulb.x,y1=bulb.y}
 				add(snek,bulb)
-				sfx(37)
+				sfx(37,1)
 				deli(bulbs,i)
 				break
 			end
@@ -490,34 +496,34 @@ function update_tongue(head)
 	if (head.aim==up) then
 		tongue={
 			x=head.x+2.5, y=head.y-1,
-			x0=head.x+2.5-flr(rnd(1)), y0=head.y-1-flr(rnd(1)), c0=sparks[flr(rnd(4))+1],
-			x1=head.x+2.5+flr(rnd(1)), y1=head.y-1+flr(rnd(1)), c1=sparks[flr(rnd(4))+1],
-			x2=head.x+2.5-flr(rnd(1)), y2=head.y-1+flr(rnd(1)), c2=sparks[flr(rnd(4))+1],
-			x3=head.x+2.5+flr(rnd(1)), y3=head.y-1-flr(rnd(1)), c3=sparks[flr(rnd(4))+1]
+			x0=head.x+flr(2.5-rnd(1)), y0=head.y-flr(1-rnd(1)), c0=sparks[flr(rnd(4))+1],
+			x1=head.x+flr(2.5+rnd(1)), y1=head.y-flr(1+rnd(1)), c1=sparks[flr(rnd(4))+1],
+			x2=head.x+flr(2.5-rnd(1)), y2=head.y-flr(1+rnd(1)), c2=sparks[flr(rnd(4))+1],
+			x3=head.x+flr(2.5+rnd(1)), y3=head.y-flr(1-rnd(1)), c3=sparks[flr(rnd(4))+1]
 		}
 	elseif (head.aim==down) then
 		tongue={
 			x=head.x+2.5, y=head.y+6,
-			x0=head.x+2-flr(rnd(1)),y0=head.y+7-flr(rnd(1)), c0=sparks[flr(rnd(4))+1],
-			x1=head.x+3+flr(rnd(1)),y1=head.y+7+flr(rnd(1)), c1=sparks[flr(rnd(4))+1],
-			x2=head.x+2-flr(rnd(1)),y2=head.y+7+flr(rnd(1)), c2=sparks[flr(rnd(4))+1],
-			x3=head.x+3+flr(rnd(1)),y3=head.y+7-flr(rnd(1)), c3=sparks[flr(rnd(4))+1]
+			x0=head.x+flr(2.5-rnd(1)),y0=head.y+flr(6-rnd(1)), c0=sparks[flr(rnd(4))+1],
+			x1=head.x+flr(2.5+rnd(1)),y1=head.y+flr(6+rnd(1)), c1=sparks[flr(rnd(4))+1],
+			x2=head.x+flr(2.5-rnd(1)),y2=head.y+flr(6+rnd(1)), c2=sparks[flr(rnd(4))+1],
+			x3=head.x+flr(2.5+rnd(1)),y3=head.y+flr(6-rnd(1)), c3=sparks[flr(rnd(4))+1]
 		}
 	elseif (head.aim==left) then
 		tongue={
 			x=head.x-1, y=head.y+2.5,
-			x0=head.x-1-flr(rnd(1)), y0=head.y+2-flr(rnd(1)), c0=sparks[flr(rnd(4))+1],
-			x1=head.x-1+flr(rnd(1)), y1=head.y+3+flr(rnd(1)), c1=sparks[flr(rnd(4))+1],
-			x2=head.x-1+flr(rnd(1)), y2=head.y+2-flr(rnd(1)), c2=sparks[flr(rnd(4))+1],
-			x3=head.x-1-flr(rnd(1)), y3=head.y+3+flr(rnd(1)), c3=sparks[flr(rnd(4))+1]
+			x0=head.x-flr(1-rnd(1)), y0=head.y+flr(2.5-rnd(1)), c0=sparks[flr(rnd(4))+1],
+			x1=head.x-flr(1+rnd(1)), y1=head.y+flr(2.5+rnd(1)), c1=sparks[flr(rnd(4))+1],
+			x2=head.x-flr(1+rnd(1)), y2=head.y+flr(2.5-rnd(1)), c2=sparks[flr(rnd(4))+1],
+			x3=head.x-flr(1-rnd(1)), y3=head.y+flr(2.5+rnd(1)), c3=sparks[flr(rnd(4))+1]
 		}
 	elseif (head.aim==right) then
 		tongue={
-			x=head.x+6, y=head.y+2.5,
-			x0=head.x+6-flr(rnd(1)), y0=head.y+2-flr(rnd(1)), c0=sparks[flr(rnd(4))+1],
-			x1=head.x+6+flr(rnd(1)), y1=head.y+3+flr(rnd(1)), c1=sparks[flr(rnd(4))+1],
-			x2=head.x+6+flr(rnd(1)), y2=head.y+2-flr(rnd(1)), c2=sparks[flr(rnd(4))+1],
-			x3=head.x+6-flr(rnd(1)), y3=head.y+3+flr(rnd(1)), c3=sparks[flr(rnd(4))+1]
+			x=head.x+7, y=head.y+2.5,
+			x0=head.x+flr(6-rnd(1)), y0=head.y+flr(2.5-rnd(1)), c0=sparks[flr(rnd(4))+1],
+			x1=head.x+flr(6+rnd(1)), y1=head.y+flr(2.5+rnd(1)), c1=sparks[flr(rnd(4))+1],
+			x2=head.x+flr(6+rnd(1)), y2=head.y+flr(2.5-rnd(1)), c2=sparks[flr(rnd(4))+1],
+			x3=head.x+flr(6-rnd(1)), y3=head.y+flr(2.5+rnd(1)), c3=sparks[flr(rnd(4))+1]
 		}
 	
 	end
@@ -529,7 +535,7 @@ function draw_snek()
 		line(wire.x0,wire.y0,wire.x1,wire.y1,dark_gray)
 	end
 	for i=1,#snek do
-		if (dark) then
+		if (not plugged_in) then
 			
 			spr(snek[i].s+48,snek[i].x,snek[i].y)
 		else
@@ -538,7 +544,7 @@ function draw_snek()
 
 	end
 	if (#snek>0) then
-		if (dark ) then
+		if (not plugged_in) then
 			pset(tongue.x,tongue.y,red)
 		else
 			pset(tongue.x0, tongue.y0,tongue.c0)
@@ -557,7 +563,7 @@ function draw_bulbs()
 
 	for i=1,#bulbs do
 		pal(charcoal,black)
-		if (dark) then
+		if (not plugged_in) then
 			
 			spr(bulbs[i].s+48,bulbs[i].x*6,bulbs[i].y*6)	
 			
@@ -570,7 +576,7 @@ end
 -->8
 --snek yard
 function init_snek_yard()
-	speed=1
+	speed=1.2
 	short=0
 	offset=0
 	burnouts={}
@@ -579,7 +585,6 @@ function init_snek_yard()
 	init_bulbs()
 end	
 function _update()
-	--if (#flames>0) update_flames()
 	if (conflagration) coresume(update_flames)
 	
 	if (btnp(fire2)and not gameover) then
@@ -595,7 +600,6 @@ function _update()
 		local bulb=get_empty_cell()
 		if (bulb) then
 			bulb.s=flr(rnd(4))+43
-			--mset(bulb.x,bulb.y,bulb.s)
 			add(bulbs,bulb)
 		end
 	end	
@@ -646,7 +650,7 @@ function _draw()
 		else
 			cls()		
 			if (not (gameover and fuses_blown)) then
-				if dark then
+				if not plugged_in then
 					pal(dark_palette,0)
 					map(16,0)	--house
 					
@@ -682,7 +686,10 @@ function _draw()
 						palt()
 						pal(light_palette)
 					end	
+					print(tongue.x,0,0,red)
+					print(tongue.y,50,0,red)
 				end	
+				
 				
 			end	
 			if (gameover) then
@@ -691,7 +698,7 @@ function _draw()
 				print("         P - play again", 0,64,red)
 			else
 				pal(light_palette)
-				
+				palt(black,true)
 				draw_bulbs()
 				draw_snek()
 			end	
