@@ -22,6 +22,18 @@ bear_skeleton={s=66,x=103,y=86,w=2,h=2,x0=104,x1=118,y0=85,y1=102}
 shirt={s=218,x=40,y=88,w=2,h=3,x0=39,x1=54,y0=87,y1=110}
 diamond={s=160,x=50,y=105,w=2,h=1,x0=49,x1=65,y0=103,y1=114}
 heart={s=114,x=10,y=50,w=1,h=1,x0=7,x1=20,y0=44,y1=64}
+star=
+{
+	palettes=
+	{
+		--{[orange]=orange, [yellow]=yellow, [white]=white},
+		[0]={[orange]=yellow, [yellow]=white, [white]=orange},
+		[1]={[orange]=white, [yellow]=orange, [white]=yellow},
+		[2]={[orange]=orange, [yellow]=orange, [white]=orange}
+	},
+	index=2
+}
+
 achievements=
 {
 	time={text="time",quantity=0},
@@ -36,6 +48,7 @@ achievements=
 	--              S
 	--            time
 	--           big ben
+	--          bonfire
 	--         robot dance   
 	--        Mood lighting
 	--       yule log tender
@@ -47,6 +60,7 @@ achievements=
 	--        Strung 100 bulbs
 	--    High voltage
 	--              Low voltage
+	--    sonar operator
 	--    Electric candle light
 	--  Electro-shock Therapy (oh, no!)
 	--     Smoke alarm sing along (uh, oh!)
@@ -54,22 +68,29 @@ achievements=
 
 }
 detect_star = function(x,y)
-	if plugged_in and not winner then
-		if  x>36 and x < 40 and y >21  and y <25 then
-			winner=true
+	
+	if  x>36 and x < 40 and y >21  and y <25 then
+		if plugged_in and not winner then
+			frame=0
 			if conflagration then
-				achievements.smoke_alarm.quantity=1
-				music(8)
+				uh_oh()
 			else
-				achievements.deck_the_halls.quantity=1
-				music(0)
-			end	
+				ho_ho_ho()
+			end
 			snek[#snek].aim=becalmed
 			return true	
-		end
-	else
-		return false
+		else
+			snek[#snek].aim=becalmed
+			snek[#snek].x=36
+			snek[#snek].y=21
+			star_connected=true
+			social_distance()
+			reverse_snek()
+			return true
+		end		
 	end
+	return false
+	
 end
 
 detect_bear=function(x,y)
@@ -114,7 +135,7 @@ detect_diamond=function(x,y)
 		return false
 	end	
 end
---shirt={s=66,x=104,y=86,w=2,h=2}
+
 detect_shirt=function(x,y)
 	if (y>87 and  y< 104 and x>39 and x<55 and plugged_in) then
 		xray[1]=shirt
@@ -150,13 +171,17 @@ detect_outlet = function(x,y)
 			social_distance()
 			reverse_snek()
 			if not plugged_in then
-				
-				--if (dark) then 
-				--	dark=false
-				--end
 				plugged_in=true
+				if star_connected==true then
+					winner=true
+					if conflagration then
+						uh_oh()
+					else
+						ho_ho_ho()
+					end
+				end
 			else --short circuit	
-				short =1
+					short =1
 			end
 			return true
 		else
@@ -201,7 +226,6 @@ detect_log=function(x,y)
 end	
 detect_clock= function(x,y)
 	if plugged_in and x\8==11 and y\8==6 and stat(54)==0 then
-		
 		music(13)
 		return true
 	end	
@@ -209,45 +233,58 @@ detect_clock= function(x,y)
 end	
 
 function detect_collision(x,y)
-	if plugged_in then	
 		if (not detect_star(x,y)) then	
 			if ( not detect_log(x,y)) then
 				if (not detect_outlet(x,y)) then 
-				   if (not detect_candles(x,y)) then 
-					   if (not detect_clock(x,y)) then
-						   if (not detect_bear(x,y)) then
+					if (not detect_candles(x,y)) then 
+						if (not detect_clock(x,y)) then
+							if (not detect_bear(x,y)) then
 								if not (detect_doll(x,y)) then
 									if not (detect_diamond(x,y)) then
 										if not(detect_shirt(x,y)) then
 										
 											--detect_robot
-											local gridx,gridy= x\8+48,y\8
-											if fget(mget(gridx,gridy),0) then
-												conflagration=true
-												mset(gridx,gridy,26)
+											if plugged_in and not star_connected then
+												local gridx,gridy= x\8+48,y\8
+												if fget(mget(gridx,gridy),0) then
+													conflagration=true
+													mset(gridx,gridy,26)
+												end	
 											end	
 										end	
 									end
 								end
-						   end
-					   end	
-				   end
-			   end
-		   end	
+							end
+						end	
+					end
+				end
+			end	
 		end
-	else
-		detect_outlet(x,y)	
-	end
+
 end
+function ho_ho_ho()
+	winner=true
+	star_connected=true
+	music(0)
+end	
+function uh_oh()
+	winner=true
+	star_connected=true
+	music(8)
+end	
+
 
 function reverse_snek()
-	temp={}
-	for i=#snek,1,-1 do
-		add(temp,snek[i])
+	if (not (star_connected and plugged_in)) then
+		local temp={}
+		for i=#snek,1,-1 do
+			add(temp,snek[i])
+		end
+		snek=temp
 	end
-	snek=temp
-	update_tongue(snek[#snek])
 	snek[#snek].aim=becalmed
+	update_tongue(snek[#snek])
+	
 	
 end
 function _init()
@@ -268,8 +305,8 @@ function _init()
 	gameover=false
 	fuses_blown=false
 	conflagration=false
+	star_connected=false
 	init_snek_yard()
-	
 
 end	
 function init_bulbs()
@@ -308,7 +345,7 @@ function update_snek()
 end
 function slither()
 	local dy, dx, c, gridx, gridy,aim
-	if plugged_in then
+	if plugged_in or star_connected then
 		
 		pinned_social_distance()
 				
@@ -385,8 +422,10 @@ function travel(head)
 				head.aim=up
 			elseif (btnp(down)) then
 				head.aim=down
-			elseif (btnp(fire1) or btnp(fire2)) then
+			elseif btnp(fire1)  then
 				plugged_in=false
+			elseif btnp(fire2) then
+				star_connected=false	
 				--dark =true	
 			end	
 		end	
@@ -525,6 +564,14 @@ function update_tongue(head)
 			x2=head.x+flr(6+rnd(1)), y2=head.y+flr(2.5-rnd(1)), c2=sparks[flr(rnd(4))+1],
 			x3=head.x+flr(6-rnd(1)), y3=head.y+flr(2.5+rnd(1)), c3=sparks[flr(rnd(4))+1]
 		}
+	elseif (head.aim==becalmed)then
+		tongue={
+			x=head.x+2.5, y=head.y+2.5,
+			x0=head.x, y0=head.y, c0=sparks[flr(rnd(4))+1],
+			x1=head.x, y1=head.y, c1=sparks[flr(rnd(4))+1],
+			x2=head.x, y2=head.y, c2=sparks[flr(rnd(4))+1],
+			x3=head.x, y3=head.y, c3=sparks[flr(rnd(4))+1]
+		}	
 	
 	end
 end
@@ -586,14 +633,8 @@ function init_snek_yard()
 end	
 function _update()
 	if (conflagration) coresume(update_flames)
-	
-	if (btnp(fire2)and not gameover) then
-		gaze_time=time()
-		gaze_wait=2
-		for bulb in all(snek) do
-			add(lights,{x=bulb.x,y=bulb.y,c=flr(bulb.s-16)+1})  -- minus 16 row above
-		end
-		music(39)
+	if frame%15==0 then
+		star.index= (star.index+1)%2 
 	end	
 	update_snek()
 	if (#bulbs <4) then
@@ -604,9 +645,10 @@ function _update()
 		end
 	end	
 	if (fire_lit) mset(11,10,rnd(yule_set))
+	
 end
 
-ignition={{x=-1,y=0},{x=1,y=0},{x=0,y=-1},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},false} ---left, right, top
+ignition={{x=-1,y=0},{x=1,y=0},{x=0,y=-1},{x=-1,y=0},{x=1,y=0},{x=0,y=-1},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0},false} ---left, right, top
 flame_set={25,26,41,42}
 function flame_generator()
 	local ignite, tree,flame,tree_x, tree_y,i,j,kindling
@@ -650,29 +692,56 @@ function _draw()
 		else
 			cls()		
 			if (not (gameover and fuses_blown)) then
-				if not plugged_in then
+				if not plugged_in then  --Dark Mode
 					pal(dark_palette,0)
 					map(16,0)	--house
 					
 					pal(dark_blue,black)
 					pal(blue,charcoal)
-					map(0,0,0,0,15,15,1) --tree
+					
+					map(0,0,0,0,15,15,5) --tree, candles
+					if (star_connected and not plugged_in) then
+						--pal(star.palettes[star.index])
+						pal(star.palettes[2])
+						map(0,0,0,0,15,15,4) --star
+
+					end	
+					if conflagration then
+						
+						pal(star.palettes[1])
+						map(48,0,0,0,14,14,2) --fire 
+						pal(dark_blue,charcoal)
+						pal(blue,charcoal)
+						palt(dark_green,true)
+						palt(green,true)
+						map(64,0) --ashes
+						palt()
+						pal(dark_palette)
+					end	
 					pal(dark_blue,dark_blue)
 					pal(blue,blue)
 					
+					
 					pal(light_palette)
+					
 					pal(charcoal,black)
 					pal(brown,charcoal)
-					map(0,0,0,0,15,15,128)
+					--map(0,0,0,0,15,15,128)
 					
 					pal(dark_palette)
 					map(32,0) --gifts
-				else 
+				else   -- Light Mode
 					pal(light_palette)
 					map(16,0)
 					pal(dark_blue,dark_green)
 					pal(blue,green)
 					map(0,0)
+					if (plugged_in and star_connected) then
+						pal(star.palettes[star.index])
+					
+						map(0,0,0,0,15,15,4) --star
+					end
+					pal(light_palette)	
 					
 					if (fuses_blown) pal(gray,black)
 					map(32,0)  --toys
@@ -686,8 +755,6 @@ function _draw()
 						palt()
 						pal(light_palette)
 					end	
-					print(tongue.x,0,0,red)
-					print(tongue.y,50,0,red)
 				end	
 				
 				
@@ -768,22 +835,22 @@ __gfx__
 777777777777ffff111111111111c1111c111111111111cc755555556ddddddd6555555544444545444444444444444445444444444444444444444444444545
 77777777f7f7f7ff111111111111c1111c111111111111ccf55555556ddddddd6555555544444445444444444444444444444444444444444444444444444445
 777777777777ffff111111111111c1111c111111111111cc76666666666666666666666644444445444444444444444444444444444444444444444444444445
-f777fff7f777ffcc111111111111c1111c111111111111cc666666665556ddddddd65557000040900a0000000522500005335000059950000588500050050050
-7777ffff7777ffcc111111111111c1111c111111111111cc666666665556ddddddd6555f00009000aa04000052cc250053bb350059aa950058ee850055550055
-f7f7f7ccf7f7f7cc111111111111c1111c111111111111cc666666665556ddddddd6555f000a9400000900002ca7c2003baab3009a77a9008ef7e80050050050
-7777ffcc7777ffcc111111111111c1111c111111111111cc66666666666666666666666f004aa900900090002c7ac2003baab3009a77a9008e7fe80050050050
-f777ffccf777ffcc111111111111c1111c111111111111cc000000066ddddddd65555557a09aa9094009900952cc250053bb350059aa950058ee850050059050
-7777ffcc7777ffcc111111111111c1111c111111111111cc6555555f6ddddddd6555555f009aaa00000a90000522500005335000059950000588500050099550
-f7f7f7ccf7f7f7cc111111111111c1111c111111111111cc6555555f6ddddddd6555555f000a90000049a00900000000000000000000000000000000509aa950
-7777ffcc7777ffcc111111111111c1111c111111111111cc6666666f666666666666666f00000004009a9000000000000000000000000000000000005aa77aa5
-ff444ff7f777fff7111111111111c1111c111111111111ccf5556dddddd655555556ddd70400009a009a90000022000000330000004400000088000050050050
-744444ff7777ffff111111111111c1111c111111111111cc75556dddddd655555556dddf09400400009a94000222200003333000049940000888800055550055
-f40404fff7f7f7ff111111111111c1111c111111111111ccf5556dddddd655555556dddfa9a04940909a9400227c2200337b3300497a940088fe880050050050
-744044ff7777ffff111111111111c1111c111111111111cc76666666666666666666666fa9a09a90000a900022cc220033bb330049aa940088e8880050050050
-f44444f7f777fff7ccccccccccccccccccccccccccccccccfddddddd655555556dddddd74a94aa40000000400222200003333000049940000888800050090050
-740404ffcc77ffff111111111111c1111c111111111111cc7ddddddd655555556ddddddf0049a900040009a00022000000330000004400000088000050099550
-f44044ffc7f7f7ff111111111111c1111c111111111111ccfddddddd655555556ddddddf9004a90a09009aa00000000000000000000000000000000050a9aa50
-77444fff7777ffff111111111111c1111c111111111111cc76666666666666666666666f0000000990009a900000000000000000000000000000000059a77a95
+f777fff7f777ffcc111111111111c1111c111111111111cc666666665556ddddddd6555700000000000000a90522500005335000059950000588500050050050
+7777ffff7777ffcc111111111111c1111c111111111111cc666666665556ddddddd6555f90a0000090900a9a52cc250053bb350059aa950058ee850055550055
+f7f7f7ccf7f7f7cc111111111111c1111c111111111111cc666666665556ddddddd6555f99a00a009000aa9a2ca7c2003baab3009a77a9008ef7e80050050050
+7777ffcc7777ffcc111111111111c1111c111111111111cc66666666666666666666666f9aa90900a900aa9a2c7ac2003baab3009a77a9008e7fe80050050050
+f777ffccf777ffcc111111111111c1111c111111111111cc000000066ddddddd655555579aa9000aaa90aa9a52cc250053bb350059aa950058ee850050059050
+7777ffcc7777ffcc111111111111c1111c111111111111cc6555555f6ddddddd6555555f9aa9000aa9400a9a0522500005335000059950000588500050099550
+f7f7f7ccf7f7f7cc111111111111c1111c111111111111cc6555555f6ddddddd6555555f99a9009aa9000a4900000000000000000000000000000000509aa950
+7777ffcc7777ffcc111111111111c1111c111111111111cc6666666f666666666666666f9490009aa9000004000000000000000000000000000000005aa77aa5
+ff444ff7f777fff7111111111111c1111c111111111111ccf5556dddddd655555556ddd749000009900009000022000000330000004400000088000050050050
+744444ff7777ffff111111111111c1111c111111111111cc75556dddddd655555556dddf0009000090009a090222200003333000049940000888800055550055
+f40404fff7f7f7ff111111111111c1111c111111111111ccf5556dddddd655555556dddf009a09009009aa00227c2200337b3300497a940088fe880050050050
+744044ff7777ffff111111111111c1111c111111111111cc76666666666666666666666f909a40000009a90022cc220033bb330049aa940088e8880050050050
+f44444f7f777fff7ccccccccccccccccccccccccccccccccfddddddd655555556dddddd7909a90909009a90a0222200003333000049940000888800050090050
+740404ffcc77ffff111111111111c1111c111111111111cc7ddddddd655555556ddddddf009a900a0009a90a0022000000330000004400000088000050099550
+f44044ffc7f7f7ff111111111111c1111c111111111111ccfddddddd655555556ddddddf0099909a9090900a0000000000000000000000000000000050a9aa50
+77444fff7777ffff111111111111c1111c111111111111cc76666666666666666666666f00494000000000000000000000000000000000000000000059a77a95
 f777fff7f777ffcc111111111111c1111c111111111111cc5556ddd7f777f6666667fff70d666d670d666d670200200000030000000000008000080050050050
 7777ffff7777ffcc111111111111c1111c111111111111cc5556dddf7777f6666667ffff0d6d6d000d6d6d000000000003000000000404000008000055550055
 f7f7f7fff7f7f7cc111111111111c1111c111111111111cc5556dddff7f7f6666667f7ff0d66d6670d66d667002c020000bb030004000000008e800050050050
@@ -889,7 +956,7 @@ f7f7f666f7f7fccccccccccccccccccccccccccccccccccc6ddddddff7f7f7fff7f7f7ff00770000
 0000000000000000000000000000b00000000033b00000000000000b000000000000000000000000000055555550000000000000000000000000000000000000
 __gff__
 0000000000000000000000000000000000000000000000000002020000000080000000000000000000020200000000800000000000000000000000000000008000000000010100000000000000000000000000000101000000000000000000000000000101010000000000000000000000000001010101000000000000000000
-0000010101010101000000000000000000000101010101010000000000000000000001010101010100000000000000008001010101010101000000000000000001010101010101010100000000008000010101010101010101010000000000000101010101010101010100000000000001010101010101010101000001000000
+0000010101010101000000000000000000000101010101010000000000000000000001010101010100000000000000008001010101010101000000000000000004010101010101010100000000008000040101010101010101040000000000000101010101010101010100000000000001010101010101010101000004000000
 __map__
 0000000000000000000000000000000001010101010101010101010101010101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000c0d900000000000000000000100203020405010178797a7b7c7d7e01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
