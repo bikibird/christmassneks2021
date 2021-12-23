@@ -12,61 +12,8 @@ buttons[1]=left; buttons[2]=right; buttons[4]=up; buttons[8]=down
 bulb_colors={green,red,blue,yellow}
 bulb_blink={dark_green,pink,dark_blue,brown}
 sparks={yellow,black,black,orange}
---flames={white,yellow,orange,red,charcoal}
-flash_pattern={0,1,4}
---crackle_pattern={0,39}
 yule_set={31, 47,63}
---flames={}
-xray={}
-bear_skeleton={s=66,x=103,y=86,w=2,h=2,x0=104,x1=118,y0=85,y1=102}
-shirt={s=218,x=40,y=88,w=2,h=3,x0=39,x1=54,y0=87,y1=110}
-diamond={s=160,x=50,y=105,w=2,h=1,x0=49,x1=65,y0=103,y1=114}
-heart={s=114,x=10,y=50,w=1,h=1,x0=7,x1=20,y0=44,y1=64}
-star=
-{
-	palettes=
-	{
-		--{[orange]=orange, [yellow]=yellow, [white]=white},
-		[0]={[orange]=yellow, [yellow]=white, [white]=orange},
-		[1]={[orange]=white, [yellow]=orange, [white]=yellow},
-		[2]={[orange]=orange, [yellow]=orange, [white]=orange}
-	},
-	index=2
-}
 
-achievements=
-{
-	time={text="time",quantity=0},
-	deck_the_halls={text="deck the halls",quantity=0,max=1},
-	smoke_alarm={text="smoke alarm sing along",quantity=0,max=1},
-	exploded_bulbs={text="exploded bulbs",quantity=0},
-	big_ben={text="big ben",quantity=0,max=1},
-	xray_vision={text="x-ray vision",quantity=0, max=4},
-	mood_lighting={text="x-ray vision",quantity=0, max=3},
-	longest_string={text="longest string of bulbs",quantity=0},
-	robot_dance={text="robot dance",quantity=0,max=1}
-	--              S
-	--            time
-	--           big ben
-	--          bonfire
-	--         robot dance   
-	--        Mood lighting
-	--       yule log tender
-	--     WWWWWWWWWWWWWWWWWWWWW
-	--       deck the halls K (ho, ho, ho!)
-	--    WWWGWWWWWPWWWwWWwWWWWWW
-	--      xray ^^^^ vision 
-	--    Exploded 10 bulbs
-	--        Strung 100 bulbs
-	--    High voltage
-	--              Low voltage
-	--    sonar operator
-	--    Electric candle light
-	--  Electro-shock Therapy (oh, no!)
-	--     Smoke alarm sing along (uh, oh!)
-	--  
-
-}
 detect_star = function(x,y)
 	
 	if  x>36 and x < 40 and y >21  and y <25 then
@@ -74,6 +21,7 @@ detect_star = function(x,y)
 			frame=0
 			if conflagration then
 				uh_oh()
+				
 			else
 				ho_ho_ho()
 			end
@@ -84,6 +32,7 @@ detect_star = function(x,y)
 			snek[#snek].x=36
 			snek[#snek].y=21
 			star_connected=true
+			sfx(48)
 			social_distance()
 			reverse_snek()
 			return true
@@ -95,6 +44,7 @@ end
 
 detect_bear=function(x,y)
 	if (y>85 and y< 100 and x>104 and x<118 and plugged_in) then
+		xray_bear=true
 		xray[1]=bear_skeleton
 		if (stat(46)!=46) sfx(46,0)
 		return true
@@ -107,8 +57,9 @@ detect_bear=function(x,y)
 	end	
 end
 detect_doll=function(x,y)
+	
 	if (x>6 and x<19 and y>44 and y< 64 and  plugged_in) then
-		
+		xray_doll=true	
 			--sfx(-1,0)
 			xray[1]=heart
 			if (stat(46)!=46) sfx(46,0)
@@ -124,6 +75,7 @@ end
 
 detect_diamond=function(x,y)
 	if (y>102 and y< 120 and x>48 and x<65 and plugged_in) then
+		xray_diamond=true
 			xray[1]=diamond
 			if (stat(46)!=46) sfx(46,0)
 		return true
@@ -137,8 +89,10 @@ detect_diamond=function(x,y)
 end
 
 detect_shirt=function(x,y)
+	
 	if (y>87 and  y< 104 and x>39 and x<55 and plugged_in) then
 		xray[1]=shirt
+		xray_shirt=true
 		if (stat(46)!=46) sfx(46,0)
 		return true
 	else
@@ -155,10 +109,12 @@ detect_outlet = function(x,y)
 		if (x<6 and x >2) then 
 			new_x=2 
 			speed=1.2
+			low_voltage=true
 			
 		elseif(x >121 and x<125  ) then
 			new_x=121
 			speed=2.2
+			high_voltage=true
 			
 		end	
 		if new_x>0 then 
@@ -172,6 +128,7 @@ detect_outlet = function(x,y)
 			reverse_snek()
 			if not plugged_in then
 				plugged_in=true
+				sfx(47)
 				if star_connected==true then
 					winner=true
 					if conflagration then
@@ -227,49 +184,52 @@ end
 detect_clock= function(x,y)
 	if plugged_in and x\8==11 and y\8==6 and stat(54)==0 then
 		music(13)
+		big_ben= true
 		return true
 	end	
 	return false
 end	
 
 function detect_collision(x,y)
-		if (not detect_star(x,y)) then	
-			if ( not detect_log(x,y)) then
-				if (not detect_outlet(x,y)) then 
-					if (not detect_candles(x,y)) then 
-						if (not detect_clock(x,y)) then
-							if (not detect_bear(x,y)) then
-								if not (detect_doll(x,y)) then
-									if not (detect_diamond(x,y)) then
-										if not(detect_shirt(x,y)) then
-										
-											--detect_robot
-											if plugged_in and not star_connected then
-												local gridx,gridy= x\8+48,y\8
-												if fget(mget(gridx,gridy),0) then
-													conflagration=true
-													mset(gridx,gridy,26)
-												end	
+	if (not detect_star(x,y)) then	
+		if ( not detect_log(x,y)) then
+			if (not detect_outlet(x,y)) then 
+				if (not detect_candles(x,y)) then 
+					if (not detect_clock(x,y)) then
+						if (not detect_bear(x,y)) then
+							if not (detect_doll(x,y)) then
+								if not (detect_diamond(x,y)) then
+									if not(detect_shirt(x,y)) then
+									
+										--detect_robot
+										if plugged_in and not star_connected then
+											local gridx,gridy= x\8+48,y\8
+											if fget(mget(gridx,gridy),0) then
+												conflagration=true
+												if (stat(46)!=41) sfx(41,0)
+												mset(gridx,gridy,26)
 											end	
 										end	
-									end
+									end	
 								end
 							end
-						end	
-					end
+						end
+					end	
 				end
-			end	
-		end
-
+			end
+		end	
+	end
 end
 function ho_ho_ho()
 	winner=true
-	star_connected=true
+star_connected=true
+	create_achievements()
 	music(0)
 end	
 function uh_oh()
 	winner=true
 	star_connected=true
+	create_achievements()		
 	music(8)
 end	
 
@@ -288,24 +248,64 @@ function reverse_snek()
 	
 end
 function _init()
+	music(-1)
+	sfx(-1)
+	xray={}
+	bear_skeleton={s=66,x=103,y=86,w=2,h=2,x0=104,x1=118,y0=85,y1=102}
+	shirt={s=218,x=40,y=88,w=2,h=3,x0=39,x1=54,y0=87,y1=110}
+	diamond={s=160,x=50,y=105,w=2,h=1,x0=49,x1=65,y0=103,y1=114}
+	heart={s=114,x=10,y=50,w=1,h=1,x0=7,x1=20,y0=44,y1=64}
+	star=
+	{
+		palettes=
+		{
+			--{[orange]=orange, [yellow]=yellow, [white]=white},
+			[0]={[orange]=yellow, [yellow]=white, [white]=orange},
+			[1]={[orange]=white, [yellow]=orange, [white]=yellow},
+			[2]={[orange]=orange, [yellow]=orange, [white]=orange}
+		},
+		index=2
+	}
+	fire=
+	{
+		palettes=
+		{
+			--{[orange]=orange, [yellow]=yellow, [white]=white},
+			[0]={[orange]=orange, [yellow]=yellow},
+			[1]={[orange]=yellow, [yellow]=orange},
+			[2]={[orange]=brown, [yellow]=orange},
+			[2]={[orange]=red, [yellow]=orange}
+		},
+		index=0
+	}
+
+	achievements={}
+
 	pal({[0]=0,1,140,3,4,5,6,7,8,9,10,11,12,13,14,15},1)
 	light_palette={[0]=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}
---		black,dark_blue,mid_blue,dark_green,brown,charcoal,gray,white,red,orange,yellow,green,blue,lavendar,pink,peach
-	dark_palette={[0]=
-		black,dark_blue,black,charcoal,dark_blue,black,charcoal,black,black,black,black,black,black,black,black,black}
+	dark_palette={[0]=black,dark_blue,black,charcoal,dark_blue,black,charcoal,black,black,black,black,black,black,black,black,black}
 	frame=0
-
-	--dark=true
-	plugged_in=false
-	fire_lit=false
-	left_candle_lit=false
-	right_candle_lit=false
-	flash_wait=.1
-	flash_time=time()
-	gameover=false
-	fuses_blown=false
+	big_ben=false
+	bonfire=false
 	conflagration=false
+	fire_lit=false
+	fuses_blown=false
+	gameover=false
+	high_voltage=false
+	plugged_in=false
+	left_candle_lit=false
+	low_voltage=false
+	outro=false
+	right_candle_lit=false
+	romantic=false
+	short=0
 	star_connected=false
+	winner=false
+	xray_bear=false
+	xray_diamond=false
+	xray_doll=false
+	xray_shirt=false
+	
 	init_snek_yard()
 
 end	
@@ -326,18 +326,15 @@ function init_snek()
 	snek={{x=62,y=62,s=flr(rnd(4))+27,aim=becalmed, wire={x0=64, y0=64, x1=64,y1=64}}}
 	tongue={x=64,y=64,x0=64,y0=64,x1=64,y1=64,x2=64,y2=64,x3=64,y3=64,c0=black,c1=black,c2=black,c3=black,}
 	
-
 end	
 
 
 
 function update_snek()
-	if (short==0)then
-			
-		travel(snek[#snek])
-	else
+	if (short>0)then
 		short_circuit(snek[#snek])
-	end	
+	end		
+	travel(snek[#snek])
 	update_burnout()
 	frame+=1
 	if (frame >32700) frame=frame%32700
@@ -412,35 +409,47 @@ function pinned_social_distance()
 end
 
 function travel(head)
-	if (head) then
-		if not winner then
-			if (btnp(left)) then
-				head.aim=left
-			elseif (btnp(right)) then
-				head.aim=right
-			elseif (btnp(up)) then
-				head.aim=up
-			elseif (btnp(down)) then
-				head.aim=down
-			elseif btnp(fire1)  then
-				plugged_in=false
-			elseif btnp(fire2) then
-				star_connected=false	
-				--dark =true	
+	if (winner or gameover or fuses_blown) then
+		if btnp(fire1)  then
+			
+			if outro then
+				reload(0x1000, 0x1000, 0x2000)
+				_init()
+			else
+				outro=true
 			end	
+		end
+		return
+	end	
+	if (head) then
+		if (btnp(left)) then
+			head.aim=left
+		elseif (btnp(right)) then
+			head.aim=right
+		elseif (btnp(up)) then
+			head.aim=up
+		elseif (btnp(down)) then
+			head.aim=down
+		elseif btnp(fire1)  then
+			plugged_in=false
+			if (fire_lit or left_candle_lit or right_candle_lit) romantic=true
+			if (conflagration) bonfire=true
+		elseif btnp(fire2) then
+			star_connected=false	
 		end	
-			if (head.aim==left) then
-				head.x-=speed
-			elseif (head.aim==right) then
-				head.x+=speed
-			elseif (head.aim==up) then
-				head.y-=speed
-			elseif (head.aim==down) then	
-				head.y+=speed
-			end
-			update_tongue(head)
-			update_growth(head)
-			slither()
+		
+		if (head.aim==left) then
+			head.x-=speed
+		elseif (head.aim==right) then
+			head.x+=speed
+		elseif (head.aim==up) then
+			head.y-=speed
+		elseif (head.aim==down) then	
+			head.y+=speed
+		end
+		update_tongue(head)
+		update_growth(head)
+		slither()
 
 	end
 end
@@ -449,7 +458,7 @@ function short_circuit()
 	local head=snek[#snek]
 	if (#snek>=short) then
 		add(burnouts,deli(snek,short))
-		burnouts[#burnouts].wait=.1+rnd(5)*.01
+		burnouts[#burnouts].wait=.2+rnd(5)*.01
 		burnouts[#burnouts].time=time()
 	end
 	if (#snek<short) then
@@ -470,19 +479,16 @@ end
 function update_burnout()
 	if (#burnouts>0)then
 		burnout=burnouts[1]
-	--	if (burnout.s%5==3) then
 		sfx(38)
-	--	end	
+	
 		if (time()-burnout.time>burnout.wait) then
-	--		burnout.s+=1
-		--	burnout.time=time()
-		--else	
-		--if (burnout.s%5==4)then
+
 			deli(burnouts,1)
 		end	
 		if (#burnouts==0 and #snek==0) then
 			gameover_time=time()
 			fuses_blown=true
+			create_achievements()
 		end	
 	elseif(#snek==0) then	
 		local timing=time()-gameover_time
@@ -543,10 +549,10 @@ function update_tongue(head)
 	elseif (head.aim==down) then
 		tongue={
 			x=head.x+2.5, y=head.y+6,
-			x0=head.x+flr(2.5-rnd(1)),y0=head.y+flr(6-rnd(1)), c0=sparks[flr(rnd(4))+1],
-			x1=head.x+flr(2.5+rnd(1)),y1=head.y+flr(6+rnd(1)), c1=sparks[flr(rnd(4))+1],
-			x2=head.x+flr(2.5-rnd(1)),y2=head.y+flr(6+rnd(1)), c2=sparks[flr(rnd(4))+1],
-			x3=head.x+flr(2.5+rnd(1)),y3=head.y+flr(6-rnd(1)), c3=sparks[flr(rnd(4))+1]
+			x0=head.x+flr(2.5-rnd(1)),y0=head.y+flr(5-rnd(1)), c0=sparks[flr(rnd(4))+1],
+			x1=head.x+flr(2.5+rnd(1)),y1=head.y+flr(5+rnd(1)), c1=sparks[flr(rnd(4))+1],
+			x2=head.x+flr(2.5-rnd(1)),y2=head.y+flr(5+rnd(1)), c2=sparks[flr(rnd(4))+1],
+			x3=head.x+flr(2.5+rnd(1)),y3=head.y+flr(5-rnd(1)), c3=sparks[flr(rnd(4))+1]
 		}
 	elseif (head.aim==left) then
 		tongue={
@@ -558,11 +564,11 @@ function update_tongue(head)
 		}
 	elseif (head.aim==right) then
 		tongue={
-			x=head.x+7, y=head.y+2.5,
-			x0=head.x+flr(6-rnd(1)), y0=head.y+flr(2.5-rnd(1)), c0=sparks[flr(rnd(4))+1],
-			x1=head.x+flr(6+rnd(1)), y1=head.y+flr(2.5+rnd(1)), c1=sparks[flr(rnd(4))+1],
-			x2=head.x+flr(6+rnd(1)), y2=head.y+flr(2.5-rnd(1)), c2=sparks[flr(rnd(4))+1],
-			x3=head.x+flr(6-rnd(1)), y3=head.y+flr(2.5+rnd(1)), c3=sparks[flr(rnd(4))+1]
+			x=head.x+5, y=head.y+2.5,
+			x0=head.x+flr(5-rnd(1)), y0=head.y+flr(2.5-rnd(1)), c0=sparks[flr(rnd(4))+1],
+			x1=head.x+flr(5+rnd(1)), y1=head.y+flr(2.5+rnd(1)), c1=sparks[flr(rnd(4))+1],
+			x2=head.x+flr(5+rnd(1)), y2=head.y+flr(2.5-rnd(1)), c2=sparks[flr(rnd(4))+1],
+			x3=head.x+flr(5-rnd(1)), y3=head.y+flr(2.5+rnd(1)), c3=sparks[flr(rnd(4))+1]
 		}
 	elseif (head.aim==becalmed)then
 		tongue={
@@ -588,18 +594,18 @@ function draw_snek()
 		else
 			spr(snek[i].s,snek[i].x,snek[i].y)
 		end	
-
 	end
 	if (#snek>0) then
-		if (not plugged_in) then
-			pset(tongue.x,tongue.y,red)
-		else
-			pset(tongue.x0, tongue.y0,tongue.c0)
-			pset(tongue.x1, tongue.y1,tongue.c1)
-			pset(tongue.x2, tongue.y2,tongue.c2)
-			pset(tongue.x3, tongue.y3,tongue.c3)	
-		end
-		
+		if snek[#snek].aim!=becalmed then
+			if (not plugged_in ) then
+				pset(tongue.x,tongue.y,red)
+			else
+				pset(tongue.x0, tongue.y0,tongue.c0)
+				pset(tongue.x1, tongue.y1,tongue.c1)
+				pset(tongue.x2, tongue.y2,tongue.c2)
+				pset(tongue.x3, tongue.y3,tongue.c3)	
+			end
+		end	
 	end	
 	for burnout in all(burnouts) do
 		spr(burnout.s+32,burnout.x,burnout.y)
@@ -620,14 +626,10 @@ function draw_bulbs()
 	end
 	pal(charcoal,charcoal)
 end	
--->8
---snek yard
 function init_snek_yard()
 	speed=1.2
 	short=0
-	offset=0
 	burnouts={}
-	boarding=false
 	init_snek()
 	init_bulbs()
 end	
@@ -680,17 +682,97 @@ function flame_generator()
 	end	
 end
 update_flames=cocreate(flame_generator)
+--[[
+it's after midnight, but you're not lazy like 
+that other elf that just sits around spying children. 
+You used to pull double shifts at the cobbler's after all.
+
+the right jolly old elf wants says "string some lights, plug 'em in and connect the tree topper." 
+"Easy!" you say. Too bad you didn't finished your electrian's course...
+
+lrud to move x to unplug from outlet o to unplug from tree topper.
+
+]]
+ 
+function create_achievements()
+	
+	add(achievements,{text="\fa★\fb", hidden="^",locked=true})	--1
+	add(achievements,{text="ti:me",hidden="ˇˇ", locked=false})	--2
+	add(achievements,{text="big\f8◆\fbben",hidden="ˇˇˇˇ", locked=true})	--3
+	add(achievements,{text="\f8◆\fbbonfire",hidden="ˇˇˇˇˇ", locked=true})		--4
+	add(achievements,{text="low voltage\f8◆\fb",hidden="ˇˇˇˇˇˇ", locked=true})--5
+	add(achievements,{text="\f8◆\fbhigh voltage",hidden="ˇˇˇˇˇˇ", locked=true})--6
+	add(achievements,{text="robot\f8◆\fbdance",hidden="ˇˇˇˇˇˇ", locked=true})--7
+	add(achievements,{text="sonar operator",hidden="ˇˇˇˇˇˇˇ", locked=true})--8
+	add(achievements,{text="yule\f8◆\fblog tender",hidden="ˇˇˇˇˇˇˇˇ", locked=true})--9
+	add(achievements,{text="x-ray vision\f8◆\fb",hidden="ˇˇˇˇˇˇˇˇˇ", locked=true})--10
+	add(achievements,{text="\f8◆\fbexploded 10 bulbs",hidden="ˇˇˇˇˇˇˇˇˇˇ", locked=true})--11
+	add(achievements,{text="romantic\f8◆\fblighting\f8◆\fb",hidden="ˇˇˇˇˇˇˇˇˇˇˇˇ", locked=true})--12
+	add(achievements,{text="\f8◆\fbelectric candlelight\f8◆\fb",hidden="ˇˇˇˇˇˇˇˇˇˇˇˇˇ", locked=true})--13
+	add(achievements,{text="longest\f8◆\fbstring 100 bulbs",hidden="ˇˇˇˇˇˇˇˇˇˇˇˇˇ", locked=true})--14
+	if (star_connected)achievements[1].locked=false
+
+	if (big_ben) achievements[3].locked=false
+	if (bonfire) achievements[4].locked=false
+	if (low_voltage) achievements[5].locked=false
+	if (high_voltage) achievements[6].locked=false
+	if (fire_lit) achievements[9].locked=false
+	local xray_vision=0
+	if (xray_bear) xray_vision+=1
+	if (xray_doll) xray_vision+=1
+	if (xray_diamond) xray_vision+=1
+	if (xray_shirt) xray_vision+=1
+	if xray_vision >0 then
+		achievements[10].text = tostr(xray).."/4"
+	end
+	if (romantic) achievements[12].locked=false
+	if left_candle_lit != right_candle_lit then
+		achievements[13].text..="1/2"
+		achievements[13].locked=false
+	end
+	if left_candle_lit and right_candle_lit then
+		achievements[13].text..="2/2"
+		achievements[13].locked=false
+	end
+	
+	if winner and not conflagration and not fuses_blown then
+		add(achievements,{text="deck the halls \f4⌂\fb ho, ho, ho!",hidden="ˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇ", locked=false})
+	elseif fuses_blown then
+		add(achievements,{text="shocking conclusion\f8◆\fbuh, oh!",hidden="ˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇ", locked=false})
+	else	
+		add(achievements,{text="smoke alarm sing along\f8◆\fbuh, oh!",hidden="ˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇ", locked=false})
+	end	
 
 
+	for achievement in all(achievements) do
+		achievement.length=print(achievement.text,0,-16)
+		achievement.locked_length=print(achievement.hidden,0,-16)
+	end
+
+end
+function draw_achievements()
+	color(green)
+	local line=0
+	for achievement in all(achievements) do
+		if not achievement.locked then
+			print(achievement.text,63-achievement.length\2,line)
+		else
+			print(achievement.hidden,63-achievement.locked_length\2,line)
+		end	
+		line=line + 8		
+	end
+	print("❎ replay", 49,line, brown)
+
+end	
 function _draw()
 	
-		
+	if (not outro)	then
 		if (#xray>0 and frame%3 >0 ) then
 			rectfill(xray[1].x0,xray[1].y0,xray[1].x1,xray[1].y1,black)
 			
 			spr(xray[1].s,xray[1].x,xray[1].y,xray[1].w,xray[1].h)
 		else
-			cls()		
+			cls(0)		
 			if (not (gameover and fuses_blown)) then
 				if not plugged_in then  --Dark Mode
 					pal(dark_palette,0)
@@ -699,16 +781,20 @@ function _draw()
 					pal(dark_blue,black)
 					pal(blue,charcoal)
 					
-					map(0,0,0,0,15,15,5) --tree, candles
+					map(0,0,0,0,15,15,5) --tree, unlit candles
+					pal(light_palette)
+					pal(charcoal,black)
+					pal(brown,charcoal)
+					map(0,0,0,0,15,15,128)  -- lit candle lit fire
+
 					if (star_connected and not plugged_in) then
-						--pal(star.palettes[star.index])
 						pal(star.palettes[2])
 						map(0,0,0,0,15,15,4) --star
 
 					end	
 					if conflagration then
 						
-						pal(star.palettes[1])
+						pal(rnd(fire.palettes))
 						map(48,0,0,0,14,14,2) --fire 
 						pal(dark_blue,charcoal)
 						pal(blue,charcoal)
@@ -743,9 +829,16 @@ function _draw()
 					end
 					pal(light_palette)	
 					
-					if (fuses_blown) pal(gray,black)
+					if (fuses_blown) then
+						
+						pal(gray,black)
+						print("OH",10,18,lavendar)
+						print("NO",23,18,lavendar)
+						
+					end	
 					map(32,0)  --toys
 					if conflagration then
+						pal(rnd(fire.palettes))
 						map(48,0,0,0,14,14,2) --fire 
 						pal(dark_blue,charcoal)
 						pal(blue,charcoal)
@@ -755,24 +848,33 @@ function _draw()
 						palt()
 						pal(light_palette)
 					end	
+					if conflagration and not fuses_blown then
+						print("UH",10,18,lavendar)
+						print("OH",23,18,lavendar)
+					end
+					
+					if winner then
+						print("❎achievements",70,117,charcoal)
+						if (not conflagration) then
+							print("HO",10,18,lavendar)
+							print("HO",23,18,lavendar)	
+							print("HO",10,34,lavendar)	
+						end	
+					end
 				end	
-				
-				
-			end	
-			if (gameover) then
-				pal(light_palette)
-				print("           game over", 0,56, red)
-				print("         P - play again", 0,64,red)
-			else
 				pal(light_palette)
 				palt(black,true)
-				draw_bulbs()
+				if (not winner) draw_bulbs()
 				draw_snek()
+			else	
+				print("❎ achievements",32,60,charcoal)
+				print (fuses_blown,0,0,red)
 			end	
-		end
-		
-	
-	
+		end	
+	else  --outro achievements
+		cls(0)
+		draw_achievements()
+	end	
 end
 function get_empty_cell()
 	local gridx=flr(rnd(19)+1)
@@ -1022,6 +1124,14 @@ d00f1800000000000000000000000000000000000000000015542155421554215542155420000016
 010f00000000000000000003f1503f1503f1503f1503f150000000000000000000003f1503f1503f1503f1503f150000000000000000000003f1503f1503f1503f1503f150000000000000000000000000000000
 010f1c000000000000000000000000000000003f1503f1503f1503f1503f150000000000000000000003f1503f1503f1503f150000000000000000000003f1503f1503f1503f1503f15001400014000140001400
 d40100032012025120201200000000000000000140001400014000140000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000106003f67030050210501965010050086500100000000190000000000000140000000011000100000f0000d0000a000000000800008000080000000008000080000a0000c0000d00000000000000000000000
+0101000022060220503a005270652704027020305052a505361003650036505365053450029500295002f5003f500335003450029500295002f5003f500335003450029500295002f5003f500005000050000500
+010f00001d54500500005001f5451d545005001a53500500005000050000500005001d54500500005001f5451d535005001a54500500005000050000500005002455500500005000050024545005002153500500
+010f1c00000000000000000000002254500000000000000022545000001d53500000000000000000000000001f5450000000000000001f54500000225450000000000215451f545000001d54500000000001f545
+490f00001d54500500005001f5451d545005001a53500500005000050000500005001d54500500005001f5451d535005001a54500500005000050000500005002455500500005000050024545005002153500500
+490f1c00000000000000000000002254500000000000000022545000001d53500000000000000000000000001f5450000000000000001f54500000225450000000000215451f545000001d54500000000001f545
+910f00001d54500500005001f5451d545005001a53500500005000050000500005001d54500500005001f5451d535005001a54500500005000050000500005002455500500005000050024545005002153500500
+910f1c00000000000000000000002254500000000000000022545000001d53500000000000000000000000001f5450000000000000001f54500000225450000000000215451f545000001d54500000000001f545
 __music__
 01 00010203
 00 04050607
@@ -1043,3 +1153,9 @@ __music__
 04 2b404040
 00 2c404040
 04 2e404040
+01 31404040
+02 32404040
+01 33404040
+02 34404040
+01 35404040
+02 36424344
