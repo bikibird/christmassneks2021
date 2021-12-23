@@ -288,12 +288,16 @@ function _init()
 	big_ben=false
 	bonfire=false
 	conflagration=false
+	echolocator=false
+	exploded_bulbs=0
 	fire_lit=false
 	fuses_blown=false
 	gameover=false
 	high_voltage=false
+	intro =true
 	plugged_in=false
 	left_candle_lit=false
+	longest_snek=1
 	low_voltage=false
 	outro=false
 	right_candle_lit=false
@@ -306,8 +310,9 @@ function _init()
 	xray_doll=false
 	xray_shirt=false
 	
-	init_snek_yard()
 
+	init_snek_yard()
+	start=time()
 end	
 function init_bulbs()
 	bulbs={}
@@ -335,10 +340,52 @@ function update_snek()
 		short_circuit(snek[#snek])
 	end		
 	travel(snek[#snek])
+	echolocation()
 	update_burnout()
 	frame+=1
 	if (frame >32700) frame=frame%32700
 	if (frame%200==0) xray={}
+end
+
+function echolocation()
+	if #snek>0 then
+		local x=snek[#snek].x
+		local y=snek[#snek].y
+		local dx, dy,song=0,0,0
+
+		if (x<-4 ) then
+			dx=x
+		elseif (x>126)	then
+			dx=(x-126)
+		end
+		if (y<-4 ) then
+			dy=y
+		elseif (y>126)	then
+			dy=(y-126)
+		end	
+		local distance=dx+dy
+		song=stat(54)
+		if song ==20 or song ==21 then
+		
+			if distance >160 then
+				poke(16196,193)  -- sfx 20
+				poke(16264,193)  -- sfx 21
+			elseif distance > 80 then
+				poke(16196,137)
+				poke(16264,137)
+			elseif distance>0 then
+				poke(16196,17)
+				poke(16264,17)
+			else
+				music(-1)
+			end	
+		else
+			if distance>0 then
+				music(20)
+				echolocator=true
+			end	
+		end
+	end		
 end
 function slither()
 	local dy, dx, c, gridx, gridy,aim
@@ -409,6 +456,7 @@ function pinned_social_distance()
 end
 
 function travel(head)
+	if (intro and (btnp(fire1) or btnp(fire2))) intro=false
 	if (winner or gameover or fuses_blown) then
 		if btnp(fire1)  then
 			
@@ -458,6 +506,7 @@ function short_circuit()
 	local head=snek[#snek]
 	if (#snek>=short) then
 		add(burnouts,deli(snek,short))
+		exploded_bulbs+=1
 		burnouts[#burnouts].wait=.2+rnd(5)*.01
 		burnouts[#burnouts].time=time()
 	end
@@ -484,6 +533,7 @@ function update_burnout()
 		if (time()-burnout.time>burnout.wait) then
 
 			deli(burnouts,1)
+
 		end	
 		if (#burnouts==0 and #snek==0) then
 			gameover_time=time()
@@ -519,23 +569,21 @@ end
 function update_growth(head)
 	local gridx=flr(tongue.x/6)
 	local gridy=flr(tongue.y/6)
-	--if (fget(mget(gridx,gridy))==1) then  //if snek yard
-		for i, bulb in pairs(bulbs) do
-			if (bulb.x==gridx and bulb.y == gridy) then
-				bulb.s=bulb.s-16 --row above
-				bulb.aim=head.aim
-				bulb.x*=6
-				bulb.y*=6
-				bulb.wire={x0=bulb.x,y0=bulb.y,x1=bulb.x,y1=bulb.y}
-				add(snek,bulb)
-				sfx(37,1)
-				deli(bulbs,i)
-				break
-			end
+	for i, bulb in pairs(bulbs) do
+		if (bulb.x==gridx and bulb.y == gridy) then
+			bulb.s=bulb.s-16 --row above
+			bulb.aim=head.aim
+			bulb.x*=6
+			bulb.y*=6
+			bulb.wire={x0=bulb.x,y0=bulb.y,x1=bulb.x,y1=bulb.y}
+			add(snek,bulb)
+			sfx(37,1)
+			deli(bulbs,i)
+			break
 		end
-		--mset(gridx,gridy,1)
-		
-	--end
+	end
+	if (#snek > longest_snek) longest_snek=#snek
+
 end
 function update_tongue(head)
 	if (head.aim==up) then
@@ -693,29 +741,34 @@ the right jolly old elf wants says "string some lights, plug 'em in and connect 
 lrud to move x to unplug from outlet o to unplug from tree topper.
 
 ]]
+
  
 function create_achievements()
-	
+	local elapsed=time()-start
+
 	add(achievements,{text="\fa★\fb", hidden="^",locked=true})	--1
-	add(achievements,{text="ti:me",hidden="ˇˇ", locked=false})	--2
+
+	add(achievements,{text=tostr(elapsed\60)..":"..flr(elapsed)%60,hidden="ˇˇ", locked=false})	--2
 	add(achievements,{text="big\f8◆\fbben",hidden="ˇˇˇˇ", locked=true})	--3
 	add(achievements,{text="\f8◆\fbbonfire",hidden="ˇˇˇˇˇ", locked=true})		--4
 	add(achievements,{text="low voltage\f8◆\fb",hidden="ˇˇˇˇˇˇ", locked=true})--5
 	add(achievements,{text="\f8◆\fbhigh voltage",hidden="ˇˇˇˇˇˇ", locked=true})--6
 	add(achievements,{text="robot\f8◆\fbdance",hidden="ˇˇˇˇˇˇ", locked=true})--7
-	add(achievements,{text="sonar operator",hidden="ˇˇˇˇˇˇˇ", locked=true})--8
+	add(achievements,{text="\f8◆\fbecholocation",hidden="ˇˇˇˇˇˇˇ", locked=true})--8
 	add(achievements,{text="yule\f8◆\fblog tender",hidden="ˇˇˇˇˇˇˇˇ", locked=true})--9
 	add(achievements,{text="x-ray vision\f8◆\fb",hidden="ˇˇˇˇˇˇˇˇˇ", locked=true})--10
-	add(achievements,{text="\f8◆\fbexploded 10 bulbs",hidden="ˇˇˇˇˇˇˇˇˇˇ", locked=true})--11
+	add(achievements,{text="\f8◆\fbexploded "..tostr(exploded_bulbs).." bulbs",hidden="ˇˇˇˇˇˇˇˇˇˇ", locked=false})--11
 	add(achievements,{text="romantic\f8◆\fblighting\f8◆\fb",hidden="ˇˇˇˇˇˇˇˇˇˇˇˇ", locked=true})--12
-	add(achievements,{text="\f8◆\fbelectric candlelight\f8◆\fb",hidden="ˇˇˇˇˇˇˇˇˇˇˇˇˇ", locked=true})--13
-	add(achievements,{text="longest\f8◆\fbstring 100 bulbs",hidden="ˇˇˇˇˇˇˇˇˇˇˇˇˇ", locked=true})--14
+	add(achievements,{text="longest\f8◆\fbstring "..tostr(longest_snek).." bulbs",hidden="ˇˇˇˇˇˇˇˇˇˇˇˇˇ", locked=false})--13
+	add(achievements,{text="\f8◆\fbelectric candlelight\f8◆\fb",hidden="ˇˇˇˇˇˇˇˇˇˇˇˇˇ", locked=true})--14
+
 	if (star_connected)achievements[1].locked=false
 
 	if (big_ben) achievements[3].locked=false
 	if (bonfire) achievements[4].locked=false
 	if (low_voltage) achievements[5].locked=false
 	if (high_voltage) achievements[6].locked=false
+	if (echolocator) achievements[8].locked=false
 	if (fire_lit) achievements[9].locked=false
 	local xray_vision=0
 	if (xray_bear) xray_vision+=1
@@ -723,16 +776,17 @@ function create_achievements()
 	if (xray_diamond) xray_vision+=1
 	if (xray_shirt) xray_vision+=1
 	if xray_vision >0 then
-		achievements[10].text = tostr(xray).."/4"
+		achievements[10].text ..= tostr(xray_vision).."/4"
+		achievements[10].locked=false
 	end
 	if (romantic) achievements[12].locked=false
 	if left_candle_lit != right_candle_lit then
-		achievements[13].text..="1/2"
-		achievements[13].locked=false
+		achievements[14].text..="1/2"
+		achievements[14].locked=false
 	end
 	if left_candle_lit and right_candle_lit then
-		achievements[13].text..="2/2"
-		achievements[13].locked=false
+		achievements[14].text..="2/2"
+		achievements[14].locked=false
 	end
 	
 	if winner and not conflagration and not fuses_blown then
@@ -742,12 +796,12 @@ function create_achievements()
 	else	
 		add(achievements,{text="smoke alarm sing along\f8◆\fbuh, oh!",hidden="ˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇ", locked=false})
 	end	
-
-
+	add(achievements,{text="\f4❎ replay\fb",hidden="ˇˇˇˇ", locked=false})
 	for achievement in all(achievements) do
 		achievement.length=print(achievement.text,0,-16)
 		achievement.locked_length=print(achievement.hidden,0,-16)
 	end
+	
 
 end
 function draw_achievements()
@@ -761,11 +815,38 @@ function draw_achievements()
 		end	
 		line=line + 8		
 	end
-	print("❎ replay", 49,line, brown)
+	--print("❎ replay", 49,line, brown)
 
 end	
-function _draw()
+function draw_intro()
+	cls(white)
+	rect(0,0,127,127,red)
+	print("it's after midnight, but ",8,5,dark_green)
+	print("you're not lazy like that ",8,12,dark_green)
+	print("other elf who sits around ",8,19,dark_green)
+	print("spying on kids. you used to ",8,26,dark_green)
+	print("pull double shifts at the ",8,33,dark_green)
+	print("cobbler's after all. ",8,40,dark_green)
+	print("the right jolly old elf said ",8,50,dark_green)
+	print(chr(34).."string some lights, plug" ,8,57,dark_green)
+	print("them in and connect the  ",8,64,dark_green)
+	print("finial on top the tree."..chr(34),8,71,dark_green)
+	print("too bad you didn't finished ",8,81,red)
+	print("your electrician's course.",8,88,red)
+	print("⬅️➡️⬆️⬇️ TO MOVE ",8,99,dark_green)
+	print("❎ CONNECT/DISCONNECT OUTLET",8,105,dark_green)
+	print("🅾️ CONNECT/DISCONNECT FINIAL",8,111,dark_green)
+	print("❎ START",94,120,dark_green)
+
+
+--lrud to move x to unplug from outlet o to unplug from tree topper.
 	
+end
+function _draw()
+	if intro then
+		draw_intro()
+		return
+	end	
 	if (not outro)	then
 		if (#xray>0 and frame%3 >0 ) then
 			rectfill(xray[1].x0,xray[1].y0,xray[1].x1,xray[1].y1,black)
@@ -852,7 +933,6 @@ function _draw()
 						print("UH",10,18,lavendar)
 						print("OH",23,18,lavendar)
 					end
-					
 					if winner then
 						print("❎achievements",70,117,charcoal)
 						if (not conflagration) then
@@ -1124,14 +1204,15 @@ d00f1800000000000000000000000000000000000000000015542155421554215542155420000016
 010f00000000000000000003f1503f1503f1503f1503f150000000000000000000003f1503f1503f1503f1503f150000000000000000000003f1503f1503f1503f1503f150000000000000000000000000000000
 010f1c000000000000000000000000000000003f1503f1503f1503f1503f150000000000000000000003f1503f1503f1503f150000000000000000000003f1503f1503f1503f1503f15001400014000140001400
 d40100032012025120201200000000000000000140001400014000140000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000106003f67030050210501965010050086500100000000190000000000000140000000011000100000f0000d0000a000000000800008000080000000008000080000a0000c0000d00000000000000000000000
+010106003f67030050210501965010050086500100000000190000000000000140000000011000100000f00008600100001960021000300003f6000000008000080000a0000c0000d00000000000000000000000
 0101000022060220503a005270652704027020305052a505361003650036505365053450029500295002f5003f500335003450029500295002f5003f500335003450029500295002f5003f500005000050000500
-010f00001d54500500005001f5451d545005001a53500500005000050000500005001d54500500005001f5451d535005001a54500500005000050000500005002455500500005000050024545005002153500500
-010f1c00000000000000000000002254500000000000000022545000001d53500000000000000000000000001f5450000000000000001f54500000225450000000000215451f545000001d54500000000001f545
-490f00001d54500500005001f5451d545005001a53500500005000050000500005001d54500500005001f5451d535005001a54500500005000050000500005002455500500005000050024545005002153500500
-490f1c00000000000000000000002254500000000000000022545000001d53500000000000000000000000001f5450000000000000001f54500000225450000000000215451f545000001d54500000000001f545
-910f00001d54500500005001f5451d545005001a53500500005000050000500005001d54500500005001f5451d535005001a54500500005000050000500005002455500500005000050024545005002153500500
-910f1c00000000000000000000002254500000000000000022545000001d53500000000000000000000000001f5450000000000000001f54500000225450000000000215451f545000001d54500000000001f545
+110f00001d57500500005001f5751d575005001a57500500005000050000500005001d57500500005001f5751d575005001a57500500005000050000500005002457500500005000050024575005002157500500
+110f1c00000000000000000000002257500000000000000022575000001d57500000000000000000000000001f5750000000000000001f57500000225750000000000215751f575000001d57500000000001f575
+890f00001d57500500005001f5751d575005001a57500500005000050000500005001d57500500005001f5751d575005001a57500500005000050000500005002457500500005000050024575005002157500500
+890f1c00000000000000000000002257500000000000000022575000001d57500000000000000000000000001f5750000000000000001f57500000225750000000000215751f575000001d57500000000001f575
+c10f00001d57500500005001f5751d575005001a57500500005000050000500005001d57500500005001f5751d575005001a57500500005000050000500005002457500500005000050024575005002157500500
+c10f1c00000000000000000000002254500000000000000022545000001d53500000000000000000000000001f5450000000000000001f54500000225450000000000215451f545000001d54500000000001f545
+42010400136701d6502a6503a65010050086500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __music__
 01 00010203
 00 04050607
