@@ -3,45 +3,65 @@ version 34
 __lua__
 --by jenny schmidt (bikibird)
 --for christmas 2021
-
-black,dark_blue,mid_blue,dark_green,brown,charcoal,gray,white,red,orange,yellow,green,blue,lavendar,pink,peach=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+--this is the story ofa hard working elf 
+--on christmas eve.  They never gave me
+--their name.  I've been calling them blinky.
+black,dark_blue,mid_blue,dark_green,brown,charcoal,gray,white,red,orange,yellow,green,blue,lavender,pink,peach=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
 left,right,up,down,fire1,fire2=0,1,2,3,4,5
 becalmed=6
 buttons={}
 buttons[1]=left; buttons[2]=right; buttons[4]=up; buttons[8]=down
-bulb_colors={green,red,blue,yellow}
-bulb_blink={dark_green,pink,dark_blue,brown}
+
 sparks={yellow,black,black,orange}
 yule_set={31, 47,63}
 
 detect_star = function(x,y)
-	
-	if  x>36 and x < 40 and y >21  and y <25 then
-		if plugged_in and not winner then
-			frame=0
-			if conflagration then
-				uh_oh()
-				
+	if #snek>1 then
+		if  x>36 and x < 40 and y >21  and y <25 then
+			if plugged_in and not winner then
+				frame=0
+				if conflagration then
+					uh_oh()
+					
+				else
+					ho_ho_ho()
+				end
+				snek[#snek].aim=becalmed
+				return true	
 			else
-				ho_ho_ho()
-			end
-			snek[#snek].aim=becalmed
-			return true	
-		else
-			snek[#snek].aim=becalmed
-			snek[#snek].x=36
-			snek[#snek].y=21
-			star_connected=true
-			sfx(48)
-			social_distance()
-			reverse_snek()
-			return true
-		end		
-	end
+				snek[#snek].aim=becalmed
+				snek[#snek].x=36
+				snek[#snek].y=21
+				star_connected=true
+				sfx(48)
+				social_distance()
+				reverse_snek()
+				return true
+			end		
+		end
+	end	
 	return false
-	
 end
-
+--robot={x=20,y=110,s={[0]=143,[1]=175,[2]=207},index=2}
+detect_robot=function(x,y)
+	local song =stat(54)
+	if (y>109 and y< 127 and x>19 and x<28  ) then
+		
+		if plugged_in then
+			if not (song > 21) then
+				music(22)
+				robot_on=true
+			end
+		else
+			robot_on=false	
+		end
+		return true
+	end
+	if robot_on and not (song >21) then
+		robot_on=false
+	end	
+	return false
+end 
 detect_bear=function(x,y)
 	if (y>85 and y< 100 and x>104 and x<118 and plugged_in) then
 		xray_bear=true
@@ -104,49 +124,51 @@ detect_shirt=function(x,y)
 	end	
 end
 detect_outlet = function(x,y)
-	if (y>81 and y<87 ) then 
-		local new_x=0
-		if (x<6 and x >2) then 
-			new_x=2 
-			speed=1.2
-			low_voltage=true
-			
-		elseif(x >121 and x<125  ) then
-			new_x=121
-			speed=2.2
-			high_voltage=true
-			
-		end	
-		if new_x>0 then 
-			snek[#snek].x=new_x 
-			if y>84 then
-				snek[#snek].y=83	
-			else
-				snek[#snek].y=81		
+	if #snek> 1 then
+		if (y>81 and y<87 ) then 
+			local new_x=0
+			if (x<6 and x >2) then 
+				new_x=2 
+				speed=1.2
+				low_voltage=true
+				
+			elseif(x >121 and x<125  ) then
+				new_x=121
+				speed=2.2
+				high_voltage=true
+				
 			end	
-			social_distance()
-			reverse_snek()
-			if not plugged_in then
-				plugged_in=true
-				sfx(47)
-				if star_connected==true then
-					winner=true
-					if conflagration then
-						uh_oh()
-					else
-						ho_ho_ho()
+			if new_x>0 then 
+				snek[#snek].x=new_x 
+				if y>84 then
+					snek[#snek].y=83	
+				else
+					snek[#snek].y=81		
+				end	
+				social_distance()
+				reverse_snek()
+				if not plugged_in then
+					plugged_in=true
+					sfx(47)
+					if star_connected==true then
+						winner=true
+						if conflagration then
+							uh_oh()
+						else
+							ho_ho_ho()
+						end
 					end
-				end
-			else --short circuit	
+				else --short circuit	
 					short =1
-			end
-			return true
+				end
+				return true
+			else
+				return false	
+			end			
 		else
-			return false	
-		end			
-	else
-		return false
-	end
+			return false
+		end
+	end	
 end
 
 detect_candles = function(x,y)
@@ -182,10 +204,15 @@ detect_log=function(x,y)
 	return false
 end	
 detect_clock= function(x,y)
-	if plugged_in and x\8==11 and y\8==6 and stat(54)==0 then
-		music(13)
-		big_ben= true
-		return true
+	if plugged_in and x\8==11 and y\8==6 then
+		clockface=true
+		if stat(54)==0 then
+			music(13)
+			big_ben= true
+			return true
+		end
+	else
+		clockface=false	
 	end	
 	return false
 end	
@@ -200,14 +227,14 @@ function detect_collision(x,y)
 							if not (detect_doll(x,y)) then
 								if not (detect_diamond(x,y)) then
 									if not(detect_shirt(x,y)) then
-									
-										--detect_robot
-										if plugged_in and not star_connected then
-											local gridx,gridy= x\8+48,y\8
-											if fget(mget(gridx,gridy),0) then
-												conflagration=true
-												if (stat(46)!=41) sfx(41,0)
-												mset(gridx,gridy,26)
+										if not detect_robot(x,y) then
+											if plugged_in and not star_connected then
+												local gridx,gridy= x\8+48,y\8
+												if fget(mget(gridx,gridy),0) then
+													conflagration=true
+													if (stat(46)!=41) sfx(41,0)
+													mset(gridx,gridy,26)
+												end	
 											end	
 										end	
 									end	
@@ -222,17 +249,64 @@ function detect_collision(x,y)
 end
 function ho_ho_ho()
 	winner=true
-star_connected=true
+	star_connected=true
 	create_achievements()
-	music(0)
+
+	sfx(-1)
+	music(0,1000)
 end	
 function uh_oh()
 	winner=true
 	star_connected=true
-	create_achievements()		
-	music(8)
-end	
+	create_achievements()	
 
+	sfx(-1)	
+	music(8,1000)
+end	
+function robot_ambulator()
+	local destinations=
+	{
+		[1]={x=20,y=98,dx=0,dy=-1,s={207,159,191}},
+		[2]={x=32,y=98,dx=1,dy=0,s={143,57,58}},
+		[3]={x=70,y=98,dx=1,dy=0,s={143,57,58},move_gifts=true},
+		[4]={x=80,y=98,dx=1,dy=0,s={207,159,191}},
+		[5]={x=128,y=98,dx=1,dy=0,s={143,57,58}}
+	}
+	local first_step=true
+
+	for destination in all(destinations) do
+		if destination.move_gifts then
+			move_gifts=true
+			mset(37,11,0)
+			mset(37,12,0)
+			mset(37,13,0)
+			mset(38,11,0)
+			mset(38,12,0)
+			mset(38,13,0)
+			mset(38,14,0)
+			mset(39,12,0)
+			mset(39,13,0)
+			mset(39,14,0)
+			mset(40,13,0)
+			mset(40,14,0)
+		end
+		while not (robot.x ==destination.x and robot.y ==destination.y) do
+			if frame%5==0 then
+				robot.x+=destination.dx
+				robot.y+=destination.dy
+				if first_step then
+					robot.s={destination.s[1],destination.s[2]}
+				else
+					robot.s={destination.s[1],destination.s[3]}
+				end	
+				first_step=not first_step
+			end	
+			yield()
+		end
+		
+	end
+end
+robot_step=cocreate(robot_ambulator)
 
 function reverse_snek()
 	if (not (star_connected and plugged_in)) then
@@ -259,9 +333,8 @@ function _init()
 	{
 		palettes=
 		{
-			--{[orange]=orange, [yellow]=yellow, [white]=white},
 			[0]={[orange]=yellow, [yellow]=white, [white]=orange},
-			[1]={[orange]=white, [yellow]=orange, [white]=yellow},
+			[1]={[orange]=yellow, [yellow]=orange, [white]=yellow},
 			[2]={[orange]=orange, [yellow]=orange, [white]=orange}
 		},
 		index=2
@@ -270,7 +343,6 @@ function _init()
 	{
 		palettes=
 		{
-			--{[orange]=orange, [yellow]=yellow, [white]=white},
 			[0]={[orange]=orange, [yellow]=yellow},
 			[1]={[orange]=yellow, [yellow]=orange},
 			[2]={[orange]=brown, [yellow]=orange},
@@ -278,15 +350,30 @@ function _init()
 		},
 		index=0
 	}
+	bulb_palette=
+	{
+		palettes=
+		{
+			[0]={[white]=blue,[yellow]=blue},
+			[1]={[yellow]=green},
+			[2]={[white]=orange, [yellow]=orange},
+			[3]={[pink]=red, [peach]=red, [white]=red},
+		}
+	}
+
+	robot={x=20,y=110,s={[0]=143,[1]=175,[2]=207},index=2}
 
 	achievements={}
 
 	pal({[0]=0,1,140,3,4,5,6,7,8,9,10,11,12,13,14,15},1)
 	light_palette={[0]=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}
 	dark_palette={[0]=black,dark_blue,black,charcoal,dark_blue,black,charcoal,black,black,black,black,black,black,black,black,black}
+	intro_palette={[0]=black,dark_blue,lavender,dark_blue,dark_blue,black,dark_blue,black,black,black,black,black,black,black,black,black}
+
 	frame=0
 	big_ben=false
 	bonfire=false
+	clockface=false
 	conflagration=false
 	echolocator=false
 	exploded_bulbs=0
@@ -301,6 +388,8 @@ function _init()
 	low_voltage=false
 	outro=false
 	right_candle_lit=false
+	robot_dance=false
+	robot_on=false
 	romantic=false
 	short=0
 	star_connected=false
@@ -328,7 +417,8 @@ end
 
 
 function init_snek()
-	snek={{x=62,y=62,s=flr(rnd(4))+27,aim=becalmed, wire={x0=64, y0=64, x1=64,y1=64}}}
+	local base=flr(rnd(4))
+	snek={{x=62,y=62,base=base,s=base+27,blink=false,frame=flr(rnd(3000)),aim=becalmed, wire={x0=64, y0=64, x1=64,y1=64}}}
 	tongue={x=64,y=64,x0=64,y0=64,x1=64,y1=64,x2=64,y2=64,x3=64,y3=64,c0=black,c1=black,c2=black,c3=black,}
 	
 end	
@@ -345,8 +435,32 @@ function update_snek()
 	frame+=1
 	if (frame >32700) frame=frame%32700
 	if (frame%200==0) xray={}
+	if (winner) then
+		for bulb in all(snek) do
+			if frame%bulb.frame==0 then
+				bulb.blink=not bulb.blink
+				if bulb.blink then
+					bulb.frame=15*flr(rnd(2)+1)  
+				else
+					bulb.frame=15*flr(rnd(4)+1)
+				end	
+			end	
+		end
+	end	
 end
-
+function update_robot()
+	if (winner) then
+		if frame%5==0 then
+			coresume(robot_step)
+			
+		end	
+	else
+		if robot_on and frame%10== 0 then
+			robot.index=(robot.index+1)%2
+		end
+	end	
+	
+end
 function echolocation()
 	if #snek>0 then
 		local x=snek[#snek].x
@@ -363,7 +477,7 @@ function echolocation()
 		elseif (y>126)	then
 			dy=(y-126)
 		end	
-		local distance=dx+dy
+		local distance= abs(dx+dy)
 		song=stat(54)
 		if song ==20 or song ==21 then
 		
@@ -389,14 +503,11 @@ function echolocation()
 end
 function slither()
 	local dy, dx, c, gridx, gridy,aim
+	detect_collision(tongue.x,tongue.y)
 	if plugged_in or star_connected then
-		
 		pinned_social_distance()
-				
 	else
-			
 		social_distance(1)
-		
 	end	
 	
 	for i=#snek-1,1,-1 do
@@ -416,7 +527,7 @@ function slither()
 			end
 		end
 	end	
-	detect_collision(tongue.x,tongue.y)
+	
 		
 end	
 function social_distance()
@@ -458,10 +569,12 @@ end
 function travel(head)
 	if (intro and (btnp(fire1) or btnp(fire2))) intro=false
 	if (winner or gameover or fuses_blown) then
-		if btnp(fire1)  then
+		if btnp(fire1) or btnp(fire2) then
 			
 			if outro then
-				reload(0x1000, 0x1000, 0x2000)
+				reload(dest_address,src_address,length,optional_filename)
+				
+				reload(0x2000, 0x2000, 0x2000)
 				_init()
 			else
 				outro=true
@@ -478,7 +591,7 @@ function travel(head)
 			head.aim=up
 		elseif (btnp(down)) then
 			head.aim=down
-		elseif btnp(fire1)  then
+		elseif btnp(fire1 )  then
 			plugged_in=false
 			if (fire_lit or left_candle_lit or right_candle_lit) romantic=true
 			if (conflagration) bonfire=true
@@ -518,7 +631,7 @@ function short_circuit()
 			
 			speed=1.2
 			
-			new_head.wire={x0=new_head.x+4, y0=new_head.y+4,x0=new_head.x+4, y0=new_head.y+4}
+			new_head.wire={x0=new_head.x+3, y0=new_head.y+3,x0=new_head.x+3, y0=new_head.y+3}
 			if (plugged_in and #snek ==1) plugged_in=false
 			update_tongue(new_head)
 
@@ -568,10 +681,13 @@ end
 
 function update_growth(head)
 	local gridx=flr(tongue.x/6)
-	local gridy=flr(tongue.y/6)
-	for i, bulb in pairs(bulbs) do
-		if (bulb.x==gridx and bulb.y == gridy) then
+	local gridy=flr(tongue.y/6) 
+	for i, bulb in pairs(bulbs) do  --check loose bulbs for connection to snek
+		if (bulb.x==gridx and bulb.y == gridy) then  --found
 			bulb.s=bulb.s-16 --row above
+			bulb.base=bulb.s-27
+			bulb.blink=false
+			bulb.frame= 10+flr(rnd(300))
 			bulb.aim=head.aim
 			bulb.x*=6
 			bulb.y*=6
@@ -612,7 +728,7 @@ function update_tongue(head)
 		}
 	elseif (head.aim==right) then
 		tongue={
-			x=head.x+5, y=head.y+2.5,
+			x=head.x+6, y=head.y+2.5,
 			x0=head.x+flr(5-rnd(1)), y0=head.y+flr(2.5-rnd(1)), c0=sparks[flr(rnd(4))+1],
 			x1=head.x+flr(5+rnd(1)), y1=head.y+flr(2.5+rnd(1)), c1=sparks[flr(rnd(4))+1],
 			x2=head.x+flr(5+rnd(1)), y2=head.y+flr(2.5-rnd(1)), c2=sparks[flr(rnd(4))+1],
@@ -633,16 +749,22 @@ function draw_snek()
 	
 	for i=1,#snek-1 do
 		local wire=snek[i].wire
-		line(wire.x0,wire.y0,wire.x1,wire.y1,dark_gray)
+		line(wire.x0,wire.y0,wire.x1,wire.y1,red)
 	end
 	for i=1,#snek do
 		if (not plugged_in) then
 			
 			spr(snek[i].s+48,snek[i].x,snek[i].y)
 		else
+			if (winner and snek[i].blink) then
+				pal(bulb_palette.palettes[snek[i].base])
+			else	
+				pal(light_palette)
+			end
 			spr(snek[i].s,snek[i].x,snek[i].y)
 		end	
 	end
+	if (plugged_in) pal(light_palette)
 	if (#snek>0) then
 		if snek[#snek].aim!=becalmed then
 			if (not plugged_in ) then
@@ -683,7 +805,7 @@ function init_snek_yard()
 end	
 function _update()
 	if (conflagration) coresume(update_flames)
-	if frame%15==0 then
+	if frame%60==0 then
 		star.index= (star.index+1)%2 
 	end	
 	update_snek()
@@ -694,6 +816,7 @@ function _update()
 			add(bulbs,bulb)
 		end
 	end	
+	update_robot()
 	if (fire_lit) mset(11,10,rnd(yule_set))
 	
 end
@@ -730,18 +853,6 @@ function flame_generator()
 	end	
 end
 update_flames=cocreate(flame_generator)
---[[
-it's after midnight, but you're not lazy like 
-that other elf that just sits around spying children. 
-You used to pull double shifts at the cobbler's after all.
-
-the right jolly old elf wants says "string some lights, plug 'em in and connect the tree topper." 
-"Easy!" you say. Too bad you didn't finished your electrian's course...
-
-lrud to move x to unplug from outlet o to unplug from tree topper.
-
-]]
-
  
 function create_achievements()
 	local elapsed=time()-start
@@ -801,57 +912,58 @@ function create_achievements()
 		achievement.length=print(achievement.text,0,-16)
 		achievement.locked_length=print(achievement.hidden,0,-16)
 	end
-	
-
 end
 function draw_achievements()
 	color(green)
-	local line=0
+	local row=0
 	for achievement in all(achievements) do
 		if not achievement.locked then
-			print(achievement.text,63-achievement.length\2,line)
+			print(achievement.text,63-achievement.length\2,row)
 		else
-			print(achievement.hidden,63-achievement.locked_length\2,line)
+			print(achievement.hidden,63-achievement.locked_length\2,row)
 		end	
-		line=line + 8		
+		row=row+ 8		
 	end
-	--print("❎ replay", 49,line, brown)
-
 end	
 function draw_intro()
-	cls(white)
-	rect(0,0,127,127,red)
-	print("it's after midnight, but ",8,5,dark_green)
-	print("you're not lazy like that ",8,12,dark_green)
-	print("other elf who sits around ",8,19,dark_green)
-	print("spying on kids. you used to ",8,26,dark_green)
-	print("pull double shifts at the ",8,33,dark_green)
-	print("cobbler's after all. ",8,40,dark_green)
-	print("the right jolly old elf said ",8,50,dark_green)
-	print(chr(34).."string some lights, plug" ,8,57,dark_green)
-	print("them in and connect the  ",8,64,dark_green)
-	print("finial on top the tree."..chr(34),8,71,dark_green)
-	print("too bad you didn't finished ",8,81,red)
-	print("your electrician's course.",8,88,red)
-	print("⬅️➡️⬆️⬇️ TO MOVE ",8,99,dark_green)
-	print("❎ CONNECT/DISCONNECT OUTLET",8,105,dark_green)
-	print("🅾️ CONNECT/DISCONNECT FINIAL",8,111,dark_green)
-	print("❎ START",94,120,dark_green)
-
-
---lrud to move x to unplug from outlet o to unplug from tree topper.
 	
+	print("it's after midnight, but ",8,5,mid_blue)
+	print("you're not lazy like that ",8,12,mid_blue)
+	print("other elf who sits around ",8,19,mid_blue)
+	print("spying on kids. you used to ",8,26,mid_blue)
+	print("pull double shifts at the ",8,33,mid_blue)
+	print("cobbler's after all. ",8,40,mid_blue)
+	print("the jolly old elf said "..chr(34).."shh,",8,50,mid_blue)
+	print("be quiet. string some lights," ,8,57,mid_blue)
+	print("plug them in and connect ",8,64,mid_blue)
+	print("the finial atop the tree."..chr(34),8,71,mid_blue)
+	print("too bad you didn't finished ",8,81,mid_blue)
+	print("your electrician's course...",8,88,mid_blue)
+	print("⬅️➡️⬆️⬇️ TO MOVE ",8,99,mid_blue)
+	print("❎ CONNECT/DISCONNECT OUTLET",8,105,mid_blue)
+	print("🅾️ CONNECT/DISCONNECT FINIAL",8,111,mid_blue)
+	print("❎ START",94,120,mid_blue)
 end
 function _draw()
 	if intro then
+		cls(0)
+		pal(intro_palette,0)
+		map(16,0)	--house
+		map(0,0,0,0,15,15,5) --tree, unlit candles
+		map(0,0,0,0,15,15,4) --star
 		draw_intro()
 		return
 	end	
 	if (not outro)	then
 		if (#xray>0 and frame%3 >0 ) then
 			rectfill(xray[1].x0,xray[1].y0,xray[1].x1,xray[1].y1,black)
-			
 			spr(xray[1].s,xray[1].x,xray[1].y,xray[1].w,xray[1].h)
+		elseif (clockface and frame%2 >0 )	then
+			circfill(92,51,2,blue)
+			pset(92,50,charcoal)
+			pset(92,51,charcoal)
+			pset(93,51,charcoal)
+
 		else
 			cls(0)		
 			if (not (gameover and fuses_blown)) then
@@ -897,6 +1009,8 @@ function _draw()
 					
 					pal(dark_palette)
 					map(32,0) --gifts
+					pal(gray,dark_blue)
+					spr(robot.s[robot.index],robot.x,robot.y,1,2)
 				else   -- Light Mode
 					pal(light_palette)
 					map(16,0)
@@ -913,8 +1027,8 @@ function _draw()
 					if (fuses_blown) then
 						
 						pal(gray,black)
-						print("OH",10,18,lavendar)
-						print("NO",23,18,lavendar)
+						print("OH",10,18,lavender)
+						print("NO",23,18,lavender)
 						
 					end	
 					map(32,0)  --toys
@@ -930,21 +1044,35 @@ function _draw()
 						pal(light_palette)
 					end	
 					if conflagration and not fuses_blown then
-						print("UH",10,18,lavendar)
-						print("OH",23,18,lavendar)
+						print("UH",10,18,lavender)
+						print("OH",23,18,lavender)
 					end
 					if winner then
 						print("❎achievements",70,117,charcoal)
 						if (not conflagration) then
-							print("HO",10,18,lavendar)
-							print("HO",23,18,lavendar)	
-							print("HO",10,34,lavendar)	
+							print("HO",10,18,lavender)
+							print("HO",23,18,lavender)	
+							print("HO",10,34,lavender)	
 						end	
 					end
+					if winner then
+						spr(robot.s[1],robot.x,robot.y)
+						spr(robot.s[2],robot.x,robot.y+8)
+						if move_gifts then
+							spr(204,robot.x+8,robot.y-10,2,3)
+							spr(222,robot.x+24,robot.y-2,1,2)
+							spr(239,robot.x+32,robot.y+6,2,2)
+							spr(253,robot.x+16,robot.y+14,2,1)
+
+						end
+					else
+						spr(robot.s[robot.index],robot.x,robot.y,1,2)
+					end	
 				end	
 				pal(light_palette)
 				palt(black,true)
 				if (not winner) draw_bulbs()
+				
 				draw_snek()
 			else	
 				print("❎ achievements",32,60,charcoal)
@@ -959,7 +1087,6 @@ end
 function get_empty_cell()
 	local gridx=flr(rnd(19)+1)
 	local gridy=flr(rnd(19)+1)
-	--local counter =0
 	local snekx=flr(snek[1].x/6)
 	local sneky=flr(snek[1].y/6)
 	if ((snek_zone(gridx,gridy))) then
@@ -1099,11 +1226,11 @@ f7f7f666f7f7fccccccccccccccccccccccccccccccccccc6ddddddff7f7f7fff7f7f7ff00770000
 00000005000000000000333b333333bbb3b3333b3bbb3300bb3b03bbb0033000435dddd555554ddd55555050350355534b5555355535515d15505534000d0000
 0009000000000000000000003333b3b333333333333333bb3b3b00000000033045d5dddd554d4d5a155550550055555dd4d5dd55535051111115050406666600
 000a0000000000000000000333b33333333303333b33330bbb3bbb0bbbb00000444444444444444444444444444444444444444444444444444444446d666d60
-008880000000000000b00000b3333b33b333bb0bbbb3b0b3330bbbbb33330000f7f7f7fff7f7f7fff7f7f7fff7f7f7fff7f7f7fff7f7f7fff7f7f7ff6d666d70
-008880000000000000b03000b33b303333b3330b0b0000bb0bbb333000000bbb7777ffff7777ffff7777ffff7777ffff7777ffff7777ffff7777ffff7d666d00
+008880000000000000b00000b3333b33b333bb0bbbb3b0b3330bbbbb33330000f7f7f7fff7f7f7fff7f7f7fff7f7f7fff7f7f7fff7f7f7fff7f7f7ff7d666d60
+008880000000000000b03000b33b303333b3330b0b0000bb0bbb333000000bbb7777ffff7777ffff7777ffff7777ffff7777ffff7777ffff7777ffff0d666d70
 00888000000000000bb3bb000b33bb00bb3bb3bbbb3bbb33333b00b0bb0b0330f777fff7f777fff7f777fff7f777fff7f777fff7f777fff7f777fff700d0d000
-008880000000000000b33bb3bbbbb0b0bb33b333bbbbbb33333b33bbbbb030007777ffff7777ffff7777ffff7777ffff7777ffff7777ffff7777ffff00706000
-04444400000000000000bbbbb0bb3bb0033333333bb0b3333bb3bbbbbb330000f7f7f7fff7f7f7fff7f7f7fff7f7f7fff7f7f7fff7f7f7fff7f7f7ff00007000
+008880000000000000b33bb3bbbbb0b0bb33b333bbbbbb33333b33bbbbb030007777ffff7777ffff7777ffff7777ffff7777ffff7777ffff7777ffff00607000
+04444400000000000000bbbbb0bb3bb0033333333bb0b3333bb3bbbbbb330000f7f7f7fff7f7f7fff7f7f7fff7f7f7fff7f7f7fff7f7f7fff7f7f7ff00700000
 4444499000bbbbb0bbbbbbb3300b3bbb0bbbbbb3bb3bb333333bbbb0330000bb7777ffff7777ffff7777ffff7777ffff7777ffff7777ffff7777ffff00000000
 000000000033333bbbbb03333bbbb3bbbb00bbb3333b333333333bb0bbbbb3bb30000000f777fff7f75444f7f777fff788888898888888800000900000070000
 00000000000b0b3b33bbb333333bbbbbbb3bb03bb333333333b33bb3333b33b0000000007777ffff7547774f7777ffff88888898888888800000a00000060000
@@ -1138,7 +1265,7 @@ f7f7f666f7f7fccccccccccccccccccccccccccccccccccc6ddddddff7f7f7fff7f7f7ff00770000
 0000000000000000000000000000b00000000033b00000000000000b000000000000000000000000000055555550000000000000000000000000000000000000
 __gff__
 0000000000000000000000000000000000000000000000000002020000000080000000000000000000020200000000800000000000000000000000000000008000000000010100000000000000000000000000000101000000000000000000000000000101010000000000000000000000000001010101000000000000000000
-0000010101010101000000000000000000000101010101010000000000000000000001010101010100000000000000008001010101010101000000000000000004010101010101010100000000008000040101010101010101040000000000000101010101010101010100000000000001010101010101010101000004000000
+0000010101010101000000000000000000000101010101010000000000000000000001010101010100000000000000008001010101010101000000000000000004010101010101010100000000008000040101010101010101040000000000000101010101010101010100000000000001010101010000000001000004000000
 __map__
 0000000000000000000000000000000001010101010101010101010101010101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000c0d900000000000000000000100203020405010178797a7b7c7d7e01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -1206,12 +1333,12 @@ d00f1800000000000000000000000000000000000000000015542155421554215542155420000016
 d40100032012025120201200000000000000000140001400014000140000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 010106003f67030050210501965010050086500100000000190000000000000140000000011000100000f00008600100001960021000300003f6000000008000080000a0000c0000d00000000000000000000000
 0101000022060220503a005270652704027020305052a505361003650036505365053450029500295002f5003f500335003450029500295002f5003f500335003450029500295002f5003f500005000050000500
-110f00001d57500500005001f5751d575005001a57500500005000050000500005001d57500500005001f5751d575005001a57500500005000050000500005002457500500005000050024575005002157500500
-110f1c00000000000000000000002257500000000000000022575000001d57500000000000000000000000001f5750000000000000001f57500000225750000000000215751f575000001d57500000000001f575
-890f00001d57500500005001f5751d575005001a57500500005000050000500005001d57500500005001f5751d575005001a57500500005000050000500005002457500500005000050024575005002157500500
-890f1c00000000000000000000002257500000000000000022575000001d57500000000000000000000000001f5750000000000000001f57500000225750000000000215751f575000001d57500000000001f575
-c10f00001d57500500005001f5751d575005001a57500500005000050000500005001d57500500005001f5751d575005001a57500500005000050000500005002457500500005000050024575005002157500500
-c10f1c00000000000000000000002254500000000000000022545000001d53500000000000000000000000001f5450000000000000001f54500000225450000000000215451f545000001d54500000000001f545
+110f00001d57500500005001f5751d575005001a57500500005000050000500005001d57500500005001f5751d575005001a57500500005000050000500005001d57500500005001f5751d575005001a57500500
+110f1c00005000050000500005001d57500500005001f5751d575005001a57500500005000050000500005001d57500500005001f5751d575005001a57500500005000050000500005001d57500500005001f575
+010100002957518500185002b57529575185002657518500185001850018500185002957518500185002b57529575185002657518500185001850018500185002957518500185002b57529575185002657518500
+010100000c5000c5000c5000c500295750c5000c5002b575295750c500265750c5000c5000c5000c5000c500295750c5000c5002b575295750c500265750c5000c5000c5000c5000c500295750c5000c5002b575
+000500001d7611d7611d7611f7611d7611d7611a7611a7611a7611a7611a7611a7611d7611d7611d7611f7611d7611d7611a7611a7611a7611a7611a7611a7611d7611d7611d7611f7611d7611d7611a7611a761
+000500001d7611d7611d7611f7611d7611d7611a7611a7611a7611a7611a7611a7611d7611d7611d7611f7611d7611d7611a7611a7611a7611a7611a7611a7611d7611d7611d7611f7611d7611d7611a7611a761
 42010400136701d6502a6503a65010050086500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __music__
 01 00010203
@@ -1237,6 +1364,13 @@ __music__
 01 31404040
 02 32404040
 01 33404040
-02 34404040
-01 35404040
-02 36424344
+00 34404040
+00 33404040
+00 34424344
+00 33424344
+00 34424344
+00 34424344
+00 33424344
+00 34424344
+00 33424344
+04 34424344
